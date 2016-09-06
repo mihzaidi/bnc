@@ -2,16 +2,12 @@ package com.icsynergy.bnc.handlers;
 
 import com.icsynergy.bnc.AccountIdGenerator;
 import com.icsynergy.bnc.Constants;
-import oracle.iam.identity.exception.NoSuchUserException;
-import oracle.iam.identity.exception.UserModifyException;
 import oracle.iam.identity.exception.UserSearchException;
-import oracle.iam.identity.exception.ValidationFailedException;
 import oracle.iam.identity.usermgmt.api.UserManager;
 import oracle.iam.identity.usermgmt.api.UserManagerConstants;
 import oracle.iam.identity.usermgmt.vo.User;
 import oracle.iam.platform.Platform;
 import oracle.iam.platform.entitymgr.vo.SearchCriteria;
-import oracle.iam.platform.kernel.Event;
 import oracle.iam.platform.kernel.EventFailedException;
 import oracle.iam.platform.kernel.spi.PostProcessHandler;
 import oracle.iam.platform.kernel.vo.*;
