@@ -199,7 +199,7 @@ public class TransitReconTask extends TaskSupport {
         log.finest("replacing job parameter");
         HashMap<String, JobParameter> map = jobDetails.getParams();
         JobParameter jobParam = map.get(PARAM_TOKEN);
-        jobParam.setValue(strNewToken);
+        jobParam.setValue(strNewToken != null ? strNewToken : "");
         map.put(PARAM_TOKEN, jobParam);
 
         log.finest("updating job parameters");
@@ -236,14 +236,14 @@ public class TransitReconTask extends TaskSupport {
             hm.put(Constants.UserAttributes.TRANSIT_TYPE_DESCRIPTION, rs.getString(TRAN_TYPE_FR_DESCRIPTION));
             hm.put(Constants.UserAttributes.OFFICE_STREET_NAME, rs.getString(TRAN_STREET_NAME_FR));
             hm.put(Constants.UserAttributes.SITE_NAME, rs.getString(TRAN_SITE_NAME_FR));
-            hm.put(Constants.UserAttributes.CITY, rs.getString(TRAN_CITY_FR));
+            hm.put(Constants.UserAttributes.TRAN_CITY, rs.getString(TRAN_CITY_FR));
             hm.put(UserManagerConstants.AttributeName.USER_COUNTRY.getId(), rs.getString(TRAN_COUNTRY_FR));
         } else {
             hm.put(Constants.UserAttributes.TRANSIT_DESCRIPTION, rs.getString(TRAN_EN_DESCRIPTION));
             hm.put(Constants.UserAttributes.TRANSIT_TYPE_DESCRIPTION, rs.getString(TRAN_TYPE_EN_DESCRIPTION));
             hm.put(Constants.UserAttributes.OFFICE_STREET_NAME, rs.getString(TRAN_STREET_NAME_EN));
             hm.put(Constants.UserAttributes.SITE_NAME, rs.getString(TRAN_SITE_NAME_EN));
-            hm.put(Constants.UserAttributes.CITY, rs.getString(TRAN_CITY_EN));
+            hm.put(Constants.UserAttributes.TRAN_CITY, rs.getString(TRAN_CITY_EN));
             hm.put(UserManagerConstants.AttributeName.USER_COUNTRY.getId(), rs.getString(TRAN_COUNTRY_EN));
         }
 

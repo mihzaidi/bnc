@@ -19,7 +19,7 @@ public class Constants {
         public static final String OFFICE_STREET_NUMBER = "OfficeStreetNumber";
         public static final String OFFICE_STREET_NAME = "OfficeStreet";
         public static final String SITE_NAME = "SiteName";
-        public static final String CITY = "City";
+        public static final String TRAN_CITY = "TranCity";
         public static final String PROVINCE_CODE = "ProvinceCode";
         public static final String COUNTRY_CODE = "CountryCode";
     }
