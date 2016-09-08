@@ -230,6 +230,7 @@ public class TransitReconTask extends TaskSupport {
         hm.put(Constants.UserAttributes.PROVINCE_CODE, rs.getString(TRAN_PROVINCE_CODE));
         hm.put(Constants.UserAttributes.COUNTRY_CODE, rs.getString(TRAN_COUNTRY_CODE));
 
+
         if (strLang.toLowerCase().equals("fr")) {
             hm.put(Constants.UserAttributes.TRANSIT_DESCRIPTION, rs.getString(TRAN_FR_DESCRIPTION));
             hm.put(Constants.UserAttributes.TRANSIT_TYPE_DESCRIPTION, rs.getString(TRAN_TYPE_FR_DESCRIPTION));
