@@ -25,17 +25,23 @@ public class EnableUserOnStartDate extends TaskSupport {
 		log.entering(getClass().getName(), "execute");
 
         // searching for users with given organization    
-        SearchCriteria currentDtCriteria = new SearchCriteria(UserManagerConstants.AttributeName.ACCOUNT_START_DATE.getId(), new Date(), SearchCriteria.Operator.EQUAL);
+        SearchCriteria currentDtCriteria =
+                new SearchCriteria(
+                        UserManagerConstants.AttributeName.ACCOUNT_START_DATE.getId(), new Date(),
+                        SearchCriteria.Operator.EQUAL);
         
         // searching for active users
-        SearchCriteria critDisabled = new SearchCriteria(UserManagerConstants.AttributeName.STATUS.getName(), 
-                                    UserManagerConstants.AttributeValues.USER_STATUS_DISABLED.getId(), SearchCriteria.Operator.EQUAL);
+        SearchCriteria critDisabled =
+                new SearchCriteria(
+                        UserManagerConstants.AttributeName.STATUS.getName(),
+                        UserManagerConstants.AttributeValues.USER_STATUS_DISABLED.getId(),
+                        SearchCriteria.Operator.EQUAL);
         
         // final criteria criteria
         SearchCriteria criteria = new SearchCriteria( currentDtCriteria, critDisabled, SearchCriteria.Operator.AND);
         
         // Hashset for holding ID
-        Set<String> retAttr = new HashSet<String>();
+        Set<String> retAttr = new HashSet<>();
         retAttr.add( UserManagerConstants.AttributeName.USER_LOGIN.getName() );
         
         // get interface
@@ -45,17 +51,17 @@ public class EnableUserOnStartDate extends TaskSupport {
         List<User> list = usrmgr.search(criteria, retAttr, null);
         
         // If no users to process; exit
-        if(list.isEmpty()){
+        if (list.isEmpty()){
             log.fine("No users matching search criteria");
     		log.exiting(getClass().getName(), "execute");
             return;
         }
         
         // Put userIDs into list for bulk operation
-        ArrayList<String> usrIDs = new ArrayList<String>();
+        ArrayList<String> usrIDs = new ArrayList<>();
         
-        for(User usr : list){
-            log.fine("User: "+usr.getId()+" "+usr.getLogin());
+        for (User usr : list){
+            log.fine("User: " + usr.getId() + " " + usr.getLogin());
             usrIDs.add(usr.getId());
         }
         
@@ -67,20 +73,19 @@ public class EnableUserOnStartDate extends TaskSupport {
         List bulkEnableSucceed = usrmgrResult.getSucceededResults();
         HashMap<String, String> bulkEnableFailed = usrmgrResult.getFailedResults();
 
-        if(!bulkEnableSucceed.isEmpty()){
+        if (!bulkEnableSucceed.isEmpty()){
             log.fine("Succeeded");
-            for(Object o : bulkEnableSucceed)
-                log.fine("User Key for the Enable User : [" + o.toString()+"]");
+            for (Object o : bulkEnableSucceed)
+                log.fine("User Key for the Enable User : [" + o.toString() + "]");
         }
         
-        if(!bulkEnableFailed.entrySet().isEmpty()){
+        if (!bulkEnableFailed.entrySet().isEmpty()){
             log.fine("Failed");
-            for(Map.Entry<String, String> entry : bulkEnableFailed.entrySet())
+            for (Map.Entry<String, String> entry : bulkEnableFailed.entrySet())
                 log.fine("User Key for not Enable User : ["+entry.getKey()+"] Reason of Failure : "+entry.getValue()+"]");
         }          
         
 		log.exiting(getClass().getName(), "execute");
-		
 	}
 
 	@Override

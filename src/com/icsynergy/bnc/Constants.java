@@ -21,6 +21,7 @@ public class Constants {
         public static final String SITE_NAME = "SiteName";
         public static final String TRAN_CITY = "TranCity";
         public static final String PROVINCE_CODE = "ProvinceCode";
+        public static final String PROVINCE = "Province";
         public static final String COUNTRY_CODE = "CountryCode";
     }
 

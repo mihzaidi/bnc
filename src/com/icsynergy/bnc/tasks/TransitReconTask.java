@@ -30,6 +30,8 @@ public class TransitReconTask extends TaskSupport {
     private static final String TRAN_STREET_NUMBER = "TRAN_STREET_NUMBER";
     private static final String TRAN_POSTALCODE = "TRAN_POSTALCODE";
     private static final String TRAN_PROVINCE_CODE = "TRAN_PROVINCE_CODE";
+    private static final String TRAN_PROVINCE_EN = "TRAN_PROVINCE_EN";
+    private static final String TRAN_PROVINCE_FR = "TRAN_PROVINCE_FR";
     private static final String TRAN_COUNTRY_CODE = "TRAN_COUNTRY_CODE";
     private static final String TRAN_FR_DESCRIPTION = "TRAN_FR_DESCRIPTION";
     private static final String TRAN_TYPE_FR_DESCRIPTION = "TRAN_TYPE_FR_DESCRIPTION";
@@ -67,6 +69,8 @@ public class TransitReconTask extends TaskSupport {
                 TRAN_FR_DESCRIPTION + "," +
                 TRAN_TYPE_FR_DESCRIPTION + "," +
                 TRAN_STREET_NAME_FR + "," +
+                TRAN_PROVINCE_EN + "," +
+                TRAN_PROVINCE_FR + "," +
                 TRAN_SITE_NAME_FR + "," +
                 TRAN_CITY_FR + "," +
                 TRAN_COUNTRY_FR + "," +
@@ -237,6 +241,7 @@ public class TransitReconTask extends TaskSupport {
             hm.put(Constants.UserAttributes.OFFICE_STREET_NAME, rs.getString(TRAN_STREET_NAME_FR));
             hm.put(Constants.UserAttributes.SITE_NAME, rs.getString(TRAN_SITE_NAME_FR));
             hm.put(Constants.UserAttributes.TRAN_CITY, rs.getString(TRAN_CITY_FR));
+            hm.put(Constants.UserAttributes.PROVINCE, rs.getString(TRAN_PROVINCE_FR));
             hm.put(UserManagerConstants.AttributeName.USER_COUNTRY.getId(), rs.getString(TRAN_COUNTRY_FR));
         } else {
             hm.put(Constants.UserAttributes.TRANSIT_DESCRIPTION, rs.getString(TRAN_EN_DESCRIPTION));
@@ -244,6 +249,7 @@ public class TransitReconTask extends TaskSupport {
             hm.put(Constants.UserAttributes.OFFICE_STREET_NAME, rs.getString(TRAN_STREET_NAME_EN));
             hm.put(Constants.UserAttributes.SITE_NAME, rs.getString(TRAN_SITE_NAME_EN));
             hm.put(Constants.UserAttributes.TRAN_CITY, rs.getString(TRAN_CITY_EN));
+            hm.put(Constants.UserAttributes.PROVINCE, rs.getString(TRAN_PROVINCE_EN));
             hm.put(UserManagerConstants.AttributeName.USER_COUNTRY.getId(), rs.getString(TRAN_COUNTRY_EN));
         }
 
