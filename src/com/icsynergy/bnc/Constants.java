@@ -11,6 +11,7 @@ public class Constants {
         public static final String ISMLogin = "ISMLogin";
         public static final String RESupn = "RESUserPrincipalName";
         public static final String EMP_MNGR = "EmployeeManager";
+        public static final String PREF_LANG = "PreferredLanguage";
 
         public static final String WORK_TRANSIT = "WorkingTransit";
         public static final String SUCCURSALE = "Succursale";

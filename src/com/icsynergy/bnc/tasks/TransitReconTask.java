@@ -103,17 +103,11 @@ public class TransitReconTask extends TaskSupport {
 
             // language = fr
             SearchCriteria critFr =
-                    new SearchCriteria(
-                            UserManagerConstants.AttributeName.LANGUAGE.getId(),
-                            "fr",
-                            SearchCriteria.Operator.EQUAL);
+                    new SearchCriteria(Constants.UserAttributes.PREF_LANG, "FR", SearchCriteria.Operator.EQUAL);
 
             // language <> fr
             SearchCriteria critNotFr =
-                    new SearchCriteria(
-                            UserManagerConstants.AttributeName.LANGUAGE.getId(),
-                            "fr",
-                            SearchCriteria.Operator.NOT_EQUAL);
+                    new SearchCriteria(Constants.UserAttributes.PREF_LANG, "FR", SearchCriteria.Operator.NOT_EQUAL);
 
             while (rs.next()) {
                 log.finest("iterating through result set...");
