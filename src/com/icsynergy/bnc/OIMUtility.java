@@ -25,6 +25,7 @@ import Thor.API.Exceptions.tcUserAccountInvalidException;
 import Thor.API.Exceptions.tcUserAlreadyLoggedInException;
 import Thor.API.Exceptions.tcVersionNotFoundException;
 import Thor.API.Operations.tcFormInstanceOperationsIntf;
+import Thor.API.Operations.tcITResourceInstanceOperationsIntf;
 import Thor.API.Operations.tcLookupOperationsIntf;
 import oracle.iam.identity.exception.AccessDeniedException;
 import oracle.iam.identity.exception.NoSuchUserException;
@@ -190,6 +191,75 @@ public class OIMUtility {
 		log.exiting("ADProvisoning", "getUserProfile");
 		return userDetail;
 	}
+	/**
+	 * This method fetches the value for ITResource being passed in the Process form for given procInstanceKey.
+	 * @param formInstanceOperationsIntf
+	 * @param processInstanceKey
+	 * @param logger
+	 * @return
+	 */
+		public static String getITResourceNameFromUserProcesssForm(tcFormInstanceOperationsIntf formInstanceOperationsIntf,
+				tcITResourceInstanceOperationsIntf itResourceinstanceOperationsIntf,
+				long processInstanceKey) {   
+			
+			long itResourceKey = 0L;
+			int countResult = 0;
+			HashMap<String, String> hashMap = null; 
+			tcResultSet itResourceDefinitionData = null;
+			String itResourceName = "";
+			String strMethodName="/getITResourceNameFromUserProcesssForm";
+			try {
+				tcResultSet resultGetProcessFormData = 
+					formInstanceOperationsIntf.getProcessFormData(processInstanceKey);
+			
+				//printTcResultSet(resultGetProcessFormData, "resultGetProcessFormData");
+				if(!isResultSetNullOrEmpty(resultGetProcessFormData)) {
+			 
+				countResult = resultGetProcessFormData.getRowCount();
+				log.fine("resultGetProcessFormData length . countResult =  " + countResult);
+		 
+				//Get the It resource Key from the process form data
+       			resultGetProcessFormData.goToRow(0);
+				itResourceKey = resultGetProcessFormData.getLongValue("UD_ADUSER_SERVER");
+				log.fine("resultGetProcessFormData length . itResourceKey  =  " + itResourceKey);
 
+				//Get the IT Resource Name from IT resource Key, based on the IT Resource definition
+				hashMap = new HashMap<String, String>(); 
+				hashMap.put("IT Resources.Key", String.valueOf(itResourceKey));
+				log.fine("LFGUtil:getITResourceNameFromUserProcesssForm()/ itResourceKey =  " + itResourceKey);
+				itResourceDefinitionData = itResourceinstanceOperationsIntf.findITResourceInstances(hashMap);
+				//printTcResultSet(itResourceDefinitionData, "itResourceDefinitionData");
+				itResourceDefinitionData.goToRow(0);
+				itResourceName = itResourceDefinitionData.getStringValue("IT Resources.Name");
+
+				log.fine("resultGetProcessFormData length . itResource  Name   =  " + itResourceName);
+				}
+				return itResourceName;
+				
+			} catch (Exception e) {
+				
+				log.fine(e.getMessage());
+				
+				return "Error";
+			}    	
+
+		}
+		
+	    /**
+		 * This is a helper method to verify whether a tcResultSet is Null or Empty..
+		 * @param s
+		 * @return
+		 */
+		public static boolean isResultSetNullOrEmpty(tcResultSet resultSet) {
+			boolean isResultSetNullOrEmpty = true;
+			try {
+				isResultSetNullOrEmpty = resultSet == null || resultSet.isEmpty() || resultSet.getRowCount() == 0;
+			} catch (Throwable t) {
+				log.fine(t.getMessage());
+			} finally {			
+			}
+			return isResultSetNullOrEmpty;
+		}   
+		
 
 }
