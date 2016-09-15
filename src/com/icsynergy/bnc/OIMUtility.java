@@ -2,6 +2,7 @@ package com.icsynergy.bnc;
 
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.thortech.xl.crypto.tcCryptoException;
@@ -44,7 +45,7 @@ public class OIMUtility {
 	static final String LOOKUPDECODE = "Lookup Definition.Lookup Code Information.Decode";
 	private HashMap<String, String> configHashMap = null;
 	public static final String USER_KEY = "usr_key";
-	
+
 	private UserManager um = Platform.getService(UserManager.class);
 
 	public static tcUtilityFactory getUtilityFactory() throws tcCryptoException, tcAPIException,
@@ -85,17 +86,13 @@ public class OIMUtility {
 	}
 
 	/**
-	 * 
 	 * This method takes the procInstKey,fieldName and fieldValue and populate
 	 * it in process form
-	 * 
-	 * @param 1.
-	 *            procInstKey : Process Instance key of a process form 2.
-	 *            fieldName : Column name of a process form 3. fieldValue :
-	 *            Field value which is going to be populate in process form
-	 * 
+	 *
+	 * @param 1. procInstKey : Process Instance key of a process form 2.
+	 *           fieldName : Column name of a process form 3. fieldValue :
+	 *           Field value which is going to be populate in process form
 	 * @return : SUCCESS
-	 * 
 	 * @throws tcCryptoException
 	 * @throws tcAPIException
 	 * @throws tcUserAccountDisabledException
@@ -109,7 +106,6 @@ public class OIMUtility {
 	 * @throws tcVersionNotFoundException
 	 * @throws tcInvalidValueException
 	 * @throws tcRequiredDataMissingException
-	 * 
 	 */
 
 	public static String populateFieldInProcessForm(long procInstKey, String fieldName, String fieldValue)
@@ -151,17 +147,15 @@ public class OIMUtility {
 	}
 
 	/**
-	 * 
 	 * This method takes the Lookup name and Lookup operation interface instance
 	 * parameters as argument and returns map that contain Lookup coded and
 	 * decoded values as key and value of the map. Method parameters are:
-	 * 
+	 * <p>
 	 * 1. lookupName : Lookup name from which Hash map is created 2. lookupIntf
 	 * : Lookup operation interface instance
-	 * 
+	 *
 	 * @return : Hash Map that contains lookup coded value as key and decoded
-	 *         value as value
-	 * 
+	 * value as value
 	 * @throws tcAPIException
 	 * @throws tcInvalidLookupException
 	 * @throws tcColumnNotFoundException
@@ -180,7 +174,7 @@ public class OIMUtility {
 		log.exiting("ADProvisoning", "getHashMapFromLookup");
 		return map;
 	}
-	
+
 	public static User getUserProfile(String userKey)
 			throws NoSuchUserException, UserLookupException,
 			SearchKeyNotUniqueException, AccessDeniedException {
@@ -191,5 +185,27 @@ public class OIMUtility {
 		return userDetail;
 	}
 
+	/**
+	 * Helper method to debug print tcResultSet into a logger
+	 * @param log Logger to direct output into
+	 * @param rs tcResultSet object to dump
+	 */
+	public static void printResultSet(Logger log, tcResultSet rs) {
+		log.finest(">>printResultSet");
+
+		String strRes = "";
+		try {
+			for (int i = 0; i < rs.getRowCount(); i++) {
+				strRes += "------------------------------------------------------\n";
+				rs.goToRow(i);
+				for (String strCol : rs.getColumnNames()) {
+					strRes += strCol + " = " + rs.getStringValue(strCol) + "\n";
+				}
+			}
+			log.finest(strRes);
+		} catch (Exception e) {
+			log.log(Level.SEVERE, e.getMessage(), e);
+		}
+	}
 
 }
