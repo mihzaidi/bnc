@@ -44,7 +44,9 @@ public class ADProvisioning {
 	// Lookup.BNC.AD.Config
 
 	/**
-	 * This method updates the process form for multiple attributes before create user in AD.
+	 * This method updates the process form for multiple attributes before
+	 * create user in AD.
+	 * 
 	 * @param processInstanceKey
 	 * @param strUserkey
 	 * @return
@@ -92,20 +94,24 @@ public class ADProvisioning {
 	}
 
 	/**
-	 * This method populate Description according to Country Type, Status, StartDate, End Date, First Name Used and Last Name Used.
+	 * This method populate Description according to Country Type, Status,
+	 * StartDate, End Date, First Name Used and Last Name Used.
+	 * 
 	 * @param userKeyL
 	 * @return
 	 * @throws NoSuchUserException
 	 * @throws UserLookupException
 	 * @throws SearchKeyNotUniqueException
 	 * @throws AccessDeniedException
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
-	private String populateDescription(long userKeyL)
-			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException, ParseException {
+	private String populateDescription(long userKeyL) throws NoSuchUserException, UserLookupException,
+			SearchKeyNotUniqueException, AccessDeniedException, ParseException {
 		String description = null;
 		String prefixdesc = null;
 		String date = null;
+		String strStartDate = null;
+		String strEndDate = null;
 		String strUserkey = String.valueOf(userKeyL);
 		User user = OIMUtility.getUserProfile(strUserkey);
 		String cc = (String) user.getAttribute(Constants.UserAttributes.COUNTRY_CODE);
@@ -118,37 +124,43 @@ public class ADProvisioning {
 		String lnUsed = (String) user.getAttribute(Constants.UserAttributes.LastNameUsed);
 		log.fine("startDate=" + startDate + ", entdDate=" + endDate);
 
-		if(isNullOrEmpty(status)||isNullOrEmpty(fnUsed)||isNullOrEmpty(fnUsed)){
-			return "";
-		}else{
-				
-			// Setting the pattern
-		    SimpleDateFormat sm = new SimpleDateFormat("dd-MM-yyyy");
-		    String strStartDate = sm.format(startDate);
-		    String strEndDate = sm.format(endDate);
-			log.fine("startDate1=" + startDate + ", endDate1=" + endDate);
-	
-			if (isNullOrEmpty(cc)) {
-				description = "";
+		if (isNullOrEmpty(status))
+			status = "";
+		if (isNullOrEmpty(fnUsed))
+			fnUsed = "";
+		if (isNullOrEmpty(fnUsed))
+			fnUsed = "";
+		SimpleDateFormat sm = new SimpleDateFormat("dd-MM-yyyy");
+		if (startDate != null) {
+			strStartDate = sm.format(startDate);
+		} else {
+			log.fine("Start date is null");
+		}
+		if (endDate != null) {
+			strEndDate = sm.format(endDate);
+		} else {
+			log.fine("End date is null");
+		}
+		if (isNullOrEmpty(cc)) {
+			description = "";
+		} else {
+			if ("Disabled".equalsIgnoreCase(status)) {
+				date = strEndDate;
 			} else {
-				if ("Disabled".equalsIgnoreCase(status)) {
-					date = strEndDate;
-				} else {
-					date = strStartDate;
-				}
-				if ("CA".equalsIgnoreCase(cc)) {
-					prefixdesc = "649/C/BNC/";
-				} else if ("US".equalsIgnoreCase(cc)) {
-					prefixdesc = "897/C/BNC/";
-				} else if ("GB".equalsIgnoreCase(cc)) {
-					prefixdesc = "866/C/BNC/";
-				} else if ("CH".equalsIgnoreCase(cc)) {
-					prefixdesc = "848/C/BNC/";
-				} else {
-					prefixdesc = "999/??/BNC/";
-				}		
-				description = prefixdesc + lnUsed + "." + fnUsed + " " + date;
+				date = strStartDate;
 			}
+			if ("CA".equalsIgnoreCase(cc)) {
+				prefixdesc = "649/C/BNC/";
+			} else if ("US".equalsIgnoreCase(cc)) {
+				prefixdesc = "897/C/BNC/";
+			} else if ("GB".equalsIgnoreCase(cc)) {
+				prefixdesc = "866/C/BNC/";
+			} else if ("CH".equalsIgnoreCase(cc)) {
+				prefixdesc = "848/C/BNC/";
+			} else {
+				prefixdesc = "999/??/BNC/";
+			}
+			description = prefixdesc + lnUsed + "." + fnUsed + " " + date;
 		}
 		log.exiting("ADProvisoning", "populateDistinguishedName");
 		return description;
@@ -156,6 +168,7 @@ public class ADProvisioning {
 
 	/**
 	 * This method updates the process form for multiple attributes.
+	 * 
 	 * @param procInstKey
 	 * @param userKey
 	 * @return
@@ -223,11 +236,11 @@ public class ADProvisioning {
 
 			String ou = lookupOperationsIntf.getDecodedValueForEncodedValue(CONFIGLOOKUP, "AD_LBG");
 			log.fine("ou " + ou);
-			if(isNullOrEmpty(ou)){
+			if (isNullOrEmpty(ou)) {
 				log.fine("Missing entry for OU ");
-				distinguishedName="";
-			}else{
-				distinguishedName = "CN=" + userLogin +","+ ou;
+				distinguishedName = "";
+			} else {
+				distinguishedName = "CN=" + userLogin + "," + ou;
 				// "ou=Users,ou= LinkedMailboxes,ou=Internal,dc=nbfg, dc=ca";
 			}
 			log.fine("distinguishedName :" + distinguishedName);
@@ -238,6 +251,7 @@ public class ADProvisioning {
 
 	/**
 	 * This method populates employee number according to account ID.
+	 * 
 	 * @param userKeyL
 	 * @return
 	 * @throws NoSuchUserException
@@ -253,16 +267,16 @@ public class ADProvisioning {
 		User user = OIMUtility.getUserProfile(strUserkey);
 		accountID = (String) user.getAttribute(Constants.UserAttributes.AccountId);
 		log.fine("accountID" + accountID);
-		if(isNullOrEmpty(accountID)){
+		if (isNullOrEmpty(accountID)) {
 			return "";
-		}else{
+		} else {
 			return accountID + "-l";
 		}
 	}
 
-	
 	/**
 	 * This method update the process form according to given attribute.
+	 * 
 	 * @param processInstanceKey
 	 * @param userKey
 	 * @param adAttribute
@@ -277,7 +291,7 @@ public class ADProvisioning {
 	 * @throws tcFormNotFoundException
 	 * @throws tcRequiredDataMissingException
 	 * @throws tcProcessNotFoundException
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
 	public String propagateChangesFromUserProfileToAD(String processInstanceKey, String userKey, String adAttribute)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException,
@@ -294,13 +308,27 @@ public class ADProvisioning {
 		if (adAttribute.equalsIgnoreCase("lastNameUsed") || adAttribute.equalsIgnoreCase("firstNameUsed")) {
 			String displayName = populateDisplayName(userKeyL);
 			procFormHash.put("UD_ADUSER_FULLNAME", displayName);
+			if (adAttribute.equalsIgnoreCase("lastNameUsed")) {
+				String lastName = populateLastName(userKeyL);
+				procFormHash.put("UD_ADUSER_LNAME", lastName);
+			}
+			if (adAttribute.equalsIgnoreCase("firstNameUsed")) {
+				String firstName = populateFirstName(userKeyL);
+				procFormHash.put("UD_ADUSER_FNAME", firstName);
+			}
 		}
 
 		if (adAttribute.equalsIgnoreCase("worktansit") || adAttribute.equalsIgnoreCase("transitDescription")) {
 			String company = populateCompany(userKeyL);
 			String phyOfcName = populatphyOfcName(userKeyL);
+
 			procFormHash.put("UD_ADUSER_COMPANY", company);
 			procFormHash.put("UD_ADUSER_OFFICE", phyOfcName);
+			if (adAttribute.equalsIgnoreCase("worktansit")) {
+				String dept = populateDepartmrnt(userKeyL);
+				procFormHash.put("UD_ADUSER_DEPARTMENT", dept);
+			}
+
 		}
 
 		if (adAttribute.equalsIgnoreCase("officeStreetNo") || adAttribute.equalsIgnoreCase("officeStreetName")
@@ -314,7 +342,7 @@ public class ADProvisioning {
 			procFormHash.put("UD_ADUSER_TELEPHONE", telephone);
 		}
 
-		if (adAttribute.equalsIgnoreCase("locale") || adAttribute.equalsIgnoreCase("functionEN")
+		if (adAttribute.equalsIgnoreCase("prefLang") || adAttribute.equalsIgnoreCase("functionEN")
 				|| adAttribute.equalsIgnoreCase("functionFR")) {
 			String title = populateTitle(userKeyL);
 			procFormHash.put("UD_ADUSER_TITLE", title);
@@ -327,22 +355,38 @@ public class ADProvisioning {
 			String description = populateDescription(userKeyL);
 			procFormHash.put("UD_ADUSER_DESCRIPTION", description);
 		}
-		if (procFormHash != null && procFormHash.size() > 0)
+		if (procFormHash != null && procFormHash.size() > 0) {
 			formInstanceOperationsIntf.setProcessFormData(processInstanceKeyL, procFormHash);
-		response = "SUCCESS";
+			response = "SUCCESS";
+		}
 		return response;
 	}
-/**
- * This function returns true is given string is empty or null.
- * @param strCheck
- * @return
- */
+
+	private String populateDepartmrnt(long userKeyL)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+
+		String strUserkey = String.valueOf(userKeyL);
+		User user = OIMUtility.getUserProfile(strUserkey);
+		String workTransit = (String) user.getAttribute(Constants.UserAttributes.WORK_TRANSIT);
+
+		return workTransit;
+
+	}
+
+	/**
+	 * This function returns true is given string is empty or null.
+	 * 
+	 * @param strCheck
+	 * @return
+	 */
 	private boolean isNullOrEmpty(String strCheck) {
 		return (strCheck == null) || strCheck.equals("null") || strCheck.trim().length() == 0;
 	}
 
 	/**
-	 * This method populate Title according to Locale, Function EN and Function FR.	
+	 * This method populate Title according to Locale, Function EN and Function
+	 * FR.
+	 * 
 	 * @param userKeyL
 	 * @return
 	 * @throws NoSuchUserException
@@ -358,18 +402,20 @@ public class ADProvisioning {
 		String prefLang = (String) user.getAttribute(Constants.UserAttributes.PREF_LANG);
 		String funEN = (String) user.getAttribute(Constants.UserAttributes.Function_EN);
 		String funFR = (String) user.getAttribute(Constants.UserAttributes.Function_FR);
-		
-		if (!isNullOrEmpty(prefLang) && "fr".equalsIgnoreCase(prefLang.toLowerCase())) {
-			if(isNullOrEmpty(funFR)){
-				title = "";
-			}else{
-				title = funFR;
-			}
-		} else {
-			if(isNullOrEmpty(funEN)){
-				title = "";
-			}else{
-				title = funEN;
+
+		if (!isNullOrEmpty(prefLang)) {
+			if ("fr".equalsIgnoreCase(prefLang.toLowerCase())) {
+				if (isNullOrEmpty(funFR)) {
+					title = "";
+				} else {
+					title = funFR;
+				}
+			} else {
+				if (isNullOrEmpty(funEN)) {
+					title = "";
+				} else {
+					title = funEN;
+				}
 			}
 		}
 		return title;
@@ -377,6 +423,7 @@ public class ADProvisioning {
 
 	/**
 	 * This method populates telephome.
+	 * 
 	 * @param userKeyL
 	 * @return
 	 * @throws NoSuchUserException
@@ -389,23 +436,25 @@ public class ADProvisioning {
 		String telephone = null;
 		String strUserkey = String.valueOf(userKeyL);
 		User user = OIMUtility.getUserProfile(strUserkey);
-		String ofcPhoneDirect = (String) user.getAttribute(Constants.UserAttributes.Office_Phone_Direct);//======
-		if(!isNullOrEmpty(ofcPhoneDirect)){
-		telephone = "+1." + ofcPhoneDirect.substring(0, 3) + "." + ofcPhoneDirect.substring(3, 6) + "."
-				+ ofcPhoneDirect.substring(6);
+		String ofcPhoneDirect = (String) user.getAttribute(Constants.UserAttributes.Office_Phone_Direct);// ======
+		if (!isNullOrEmpty(ofcPhoneDirect)) {
+			telephone = "+1." + ofcPhoneDirect.substring(0, 3) + "." + ofcPhoneDirect.substring(3, 6) + "."
+					+ ofcPhoneDirect.substring(6);
 		}
 		return telephone;
 	}
 
-/**
- * This method populate Street Address according to Office Street Number, Office Street Name and Site Name.	
- * @param userKeyL
- * @return
- * @throws NoSuchUserException
- * @throws UserLookupException
- * @throws SearchKeyNotUniqueException
- * @throws AccessDeniedException
- */
+	/**
+	 * This method populate Street Address according to Office Street Number,
+	 * Office Street Name and Site Name.
+	 * 
+	 * @param userKeyL
+	 * @return
+	 * @throws NoSuchUserException
+	 * @throws UserLookupException
+	 * @throws SearchKeyNotUniqueException
+	 * @throws AccessDeniedException
+	 */
 	private String populateStreetAddress(long userKeyL)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
 		String streetAddress = null;
@@ -414,13 +463,25 @@ public class ADProvisioning {
 		String ofcStreetNo = (String) user.getAttribute(Constants.UserAttributes.OFFICE_STREET_NUMBER);
 		String ofcStreetName = (String) user.getAttribute(Constants.UserAttributes.OFFICE_STREET_NAME);
 		String siteName = (String) user.getAttribute(Constants.UserAttributes.SITE_NAME);
+
+		if (isNullOrEmpty(ofcStreetNo)) {
+			ofcStreetNo = "";
+		}
+		if (isNullOrEmpty(ofcStreetName)) {
+			ofcStreetName = "";
+		}
+		if (isNullOrEmpty(siteName)) {
+			siteName = "";
+		}
 		streetAddress = ofcStreetNo + " " + ofcStreetName + " " + siteName;
-	
+
 		return streetAddress;
 	}
 
 	/**
-	 * This method populate Physical Delivery Office Name according to work transit and transit description.
+	 * This method populate Physical Delivery Office Name according to work
+	 * transit and transit description.
+	 * 
 	 * @param userKeyL
 	 * @return
 	 * @throws NoSuchUserException
@@ -435,12 +496,20 @@ public class ADProvisioning {
 		User user = OIMUtility.getUserProfile(strUserkey);
 		String workTransit = (String) user.getAttribute(Constants.UserAttributes.WORK_TRANSIT);
 		String transitDesc = (String) user.getAttribute(Constants.UserAttributes.TRANSIT_DESCRIPTION);
+		if (isNullOrEmpty(workTransit)) {
+			workTransit = "";
+		}
+		if (isNullOrEmpty(transitDesc)) {
+			transitDesc = "";
+		}
 		phyOfcName = workTransit + "|" + transitDesc;
 		return phyOfcName;
 	}
 
 	/**
-	 * This method populate Company according to work transit and transit description.
+	 * This method populate Company according to work transit and transit
+	 * description.
+	 * 
 	 * @param userKeyL
 	 * @return
 	 * @throws NoSuchUserException
@@ -455,12 +524,20 @@ public class ADProvisioning {
 		User user = OIMUtility.getUserProfile(strUserkey);
 		String workTransit = (String) user.getAttribute(Constants.UserAttributes.WORK_TRANSIT);
 		String transitDesc = (String) user.getAttribute(Constants.UserAttributes.TRANSIT_DESCRIPTION);
+		if (isNullOrEmpty(workTransit)) {
+			workTransit = "";
+		}
+		if (isNullOrEmpty(transitDesc)) {
+			transitDesc = "";
+		}
 		company = "BNC/" + workTransit + "-" + transitDesc;
 		return company;
 	}
 
 	/**
-	 * This method populate Display name according to First Name Used and Last Name Used.
+	 * This method populate Display name according to First Name Used and Last
+	 * Name Used.
+	 * 
 	 * @param userKeyL
 	 * @return
 	 * @throws NoSuchUserException
@@ -477,7 +554,54 @@ public class ADProvisioning {
 		User user = OIMUtility.getUserProfile(strUserkey);
 		fnUsed = (String) user.getAttribute(Constants.UserAttributes.FirstNameUsed);
 		lnUsed = (String) user.getAttribute(Constants.UserAttributes.LastNameUsed);
+		if (isNullOrEmpty(fnUsed)) {
+			fnUsed = "";
+		}
+		if (isNullOrEmpty(lnUsed)) {
+			lnUsed = "";
+		}
 		displayName = lnUsed + "," + fnUsed;
 		return displayName;
 	}
+
+	/**
+	 * This method populate Display name according to First Name Used and Last
+	 * Name Used.
+	 * 
+	 * @param userKeyL
+	 * @return
+	 * @throws NoSuchUserException
+	 * @throws UserLookupException
+	 * @throws SearchKeyNotUniqueException
+	 * @throws AccessDeniedException
+	 */
+	private String populateLastName(long userKeyL)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		String lnUsed = null;
+		String strUserkey = String.valueOf(userKeyL);
+		User user = OIMUtility.getUserProfile(strUserkey);
+		lnUsed = (String) user.getAttribute(Constants.UserAttributes.LastNameUsed);
+		return lnUsed;
+	}
+
+	/**
+	 * This method populate Display name according to First Name Used and Last
+	 * Name Used.
+	 * 
+	 * @param userKeyL
+	 * @return
+	 * @throws NoSuchUserException
+	 * @throws UserLookupException
+	 * @throws SearchKeyNotUniqueException
+	 * @throws AccessDeniedException
+	 */
+	private String populateFirstName(long userKeyL)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		String fnUsed = null;
+		String strUserkey = String.valueOf(userKeyL);
+		User user = OIMUtility.getUserProfile(strUserkey);
+		fnUsed = (String) user.getAttribute(Constants.UserAttributes.FirstNameUsed);
+		return fnUsed;
+	}
+
 }

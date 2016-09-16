@@ -61,7 +61,6 @@ public class OIMUtility {
 	public static final String UPN_DOMAIN = "UPN Domain";
 	public static final String AD_ITRES_SERVER_ADDR = "Server Address";
 	private UserManager um = Platform.getService(UserManager.class);
-	
 
 	public static tcUtilityFactory getUtilityFactory() throws tcCryptoException, tcAPIException,
 			tcUserAccountDisabledException, tcPasswordResetAttemptsExceededException, tcLoginAttemptsExceededException,
@@ -227,9 +226,6 @@ public class OIMUtility {
 		log.exiting("ADProvisoning", "getITResourceField");
 		return fieldValue;
 	}
-
-
-	
 
 	public static User getUserProfile(String userKey)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
