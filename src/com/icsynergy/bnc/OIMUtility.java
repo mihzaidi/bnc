@@ -26,6 +26,7 @@ import Thor.API.Exceptions.tcUserAccountInvalidException;
 import Thor.API.Exceptions.tcUserAlreadyLoggedInException;
 import Thor.API.Exceptions.tcVersionNotFoundException;
 import Thor.API.Operations.tcFormInstanceOperationsIntf;
+import Thor.API.Operations.tcITResourceInstanceOperationsIntf;
 import Thor.API.Operations.tcLookupOperationsIntf;
 import oracle.iam.identity.exception.AccessDeniedException;
 import oracle.iam.identity.exception.NoSuchUserException;
@@ -89,7 +90,7 @@ public class OIMUtility {
 	 * This method takes the procInstKey,fieldName and fieldValue and populate
 	 * it in process form
 	 *
-	 * @param 1. procInstKey : Process Instance key of a process form 2.
+	 * @param procInstKey : Process Instance key of a process form 2.
 	 *           fieldName : Column name of a process form 3. fieldValue :
 	 *           Field value which is going to be populate in process form
 	 * @return : SUCCESS
@@ -184,28 +185,95 @@ public class OIMUtility {
 		log.exiting("ADProvisoning", "getUserProfile");
 		return userDetail;
 	}
-
 	/**
-	 * Helper method to debug print tcResultSet into a logger
-	 * @param log Logger to direct output into
-	 * @param rs tcResultSet object to dump
+	 * This method fetches the value for ITResource being passed in the Process form for given procInstanceKey.
+	 * @param formInstanceOperationsIntf
+	 * @param processInstanceKey
+	 * @return
 	 */
-	public static void printResultSet(Logger log, tcResultSet rs) {
-		log.finest(">>printResultSet");
+		public static String getITResourceNameFromUserProcesssForm(tcFormInstanceOperationsIntf formInstanceOperationsIntf,
+				tcITResourceInstanceOperationsIntf itResourceinstanceOperationsIntf,
+				long processInstanceKey) {   
+			
+			long itResourceKey = 0L;
+			int countResult = 0;
+			HashMap<String, String> hashMap = null; 
+			tcResultSet itResourceDefinitionData = null;
+			String itResourceName = "";
+			String strMethodName="/getITResourceNameFromUserProcesssForm";
+			try {
+				tcResultSet resultGetProcessFormData = 
+					formInstanceOperationsIntf.getProcessFormData(processInstanceKey);
+			
+				//printTcResultSet(resultGetProcessFormData, "resultGetProcessFormData");
+				if(!isResultSetNullOrEmpty(resultGetProcessFormData)) {
+			 
+				countResult = resultGetProcessFormData.getRowCount();
+				log.fine("resultGetProcessFormData length . countResult =  " + countResult);
+		 
+				//Get the It resource Key from the process form data
+       			resultGetProcessFormData.goToRow(0);
+				itResourceKey = resultGetProcessFormData.getLongValue("UD_ADUSER_SERVER");
+				log.fine("resultGetProcessFormData length . itResourceKey  =  " + itResourceKey);
 
-		String strRes = "";
-		try {
-			for (int i = 0; i < rs.getRowCount(); i++) {
-				strRes += "------------------------------------------------------\n";
-				rs.goToRow(i);
-				for (String strCol : rs.getColumnNames()) {
-					strRes += strCol + " = " + rs.getStringValue(strCol) + "\n";
+				//Get the IT Resource Name from IT resource Key, based on the IT Resource definition
+				hashMap = new HashMap<String, String>(); 
+				hashMap.put("IT Resources.Key", String.valueOf(itResourceKey));
+				log.fine("LFGUtil:getITResourceNameFromUserProcesssForm()/ itResourceKey =  " + itResourceKey);
+				itResourceDefinitionData = itResourceinstanceOperationsIntf.findITResourceInstances(hashMap);
+				//printTcResultSet(itResourceDefinitionData, "itResourceDefinitionData");
+				itResourceDefinitionData.goToRow(0);
+				itResourceName = itResourceDefinitionData.getStringValue("IT Resources.Name");
+
+				log.fine("resultGetProcessFormData length . itResource  Name   =  " + itResourceName);
 				}
-			}
-			log.finest(strRes);
-		} catch (Exception e) {
-			log.log(Level.SEVERE, e.getMessage(), e);
-		}
-	}
+				return itResourceName;
+				
+			} catch (Exception e) {
+				
+				log.fine(e.getMessage());
+				
+				return "Error";
+			}    	
 
+		}
+		
+	    /**
+		 * This is a helper method to verify whether a tcResultSet is Null or Empty..
+		 * @param resultSet to check
+		 * @return
+		 */
+		public static boolean isResultSetNullOrEmpty(tcResultSet resultSet) {
+			boolean isResultSetNullOrEmpty = true;
+			try {
+				isResultSetNullOrEmpty = resultSet == null || resultSet.isEmpty() || resultSet.getRowCount() == 0;
+			} catch (Throwable t) {
+				log.fine(t.getMessage());
+			} finally {			
+			}
+			return isResultSetNullOrEmpty;
+		}   
+		
+    /**
+     * Helper method to debug print tcResultSet into a logger
+     * @param log Logger to direct output into
+     * @param rs tcResultSet object to dump
+     */
+    public static void printResultSet(Logger log, tcResultSet rs) {
+        log.finest(">>printResultSet");
+
+        String strRes = "";
+        try {
+            for (int i = 0; i < rs.getRowCount(); i++) {
+                strRes += "------------------------------------------------------\n";
+                rs.goToRow(i);
+                for (String strCol : rs.getColumnNames()) {
+                    strRes += strCol + " = " + rs.getStringValue(strCol) + "\n";
+                }
+            }
+            log.finest(strRes);
+        } catch (Exception e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+        }
+    }
 }

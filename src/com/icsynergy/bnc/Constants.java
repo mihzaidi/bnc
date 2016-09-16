@@ -24,6 +24,9 @@ public class Constants {
         public static final String PROVINCE_CODE = "ProvinceCode";
         public static final String PROVINCE = "Province";
         public static final String COUNTRY_CODE = "CountryCode";
+        public static final String Function_EN ="bngfFunctionEN";
+        public static final String Function_FR ="bngFunctionFR";
+        public static final String Office_Phone_Direct = "bngOfficePhoneDirect";
     }
 
     public class CoucheAttributes {
