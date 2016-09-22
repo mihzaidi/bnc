@@ -40,6 +40,9 @@ public class ADProvisioning {
 	final private static Logger log = Logger.getLogger("com.icsynergy");
 	private final String CONFIGLOOKUP = "Lookup.BNC.AD.Config";
 	private tcLookupOperationsIntf lookupOperationsIntf = Platform.getService(tcLookupOperationsIntf.class);
+	tcFormInstanceOperationsIntf formInstanceOperationsIntf = Platform.getService(tcFormInstanceOperationsIntf.class);;
+	tcITResourceInstanceOperationsIntf itResourceinstanceOperationsIntf = Platform
+			.getService(tcITResourceInstanceOperationsIntf.class);
 
 	// Lookup.BNC.AD.Config
 
@@ -50,36 +53,158 @@ public class ADProvisioning {
 	 * @param processInstanceKey
 	 * @param strUserkey
 	 * @return
+	 * @throws AccessDeniedException
+	 * @throws SearchKeyNotUniqueException
+	 * @throws UserLookupException
+	 * @throws NoSuchUserException
 	 */
-	public String preActionsOnADCreateUser(String processInstanceKey, String strUserkey) {
+	public String preActionsOnADCreateUser(String processInstanceKey, String strUserkey)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
 		log.entering(getClass().getName(), "preActionsOnADCreateUser");
-
+		log.fine("processInstanceKey" + processInstanceKey + "strUserkey" + strUserkey);
 		long processInstanceKeyL = Long.parseLong(processInstanceKey);
 		tcFormInstanceOperationsIntf formInstanceOperationsIntf = null;
-		long userKeyL = Long.parseLong(strUserkey);
+		formInstanceOperationsIntf = Platform.getService(tcFormInstanceOperationsIntf.class);
+		// long userKeyL = Long.parseLong(strUserkey);
 		HashMap<String, String> procFormHash = new HashMap<String, String>();
 		String response = "FAILURE";
-		try {
-			formInstanceOperationsIntf = Platform.getService(tcFormInstanceOperationsIntf.class);
-			String distinguishName = populateDistinguishedName(processInstanceKeyL, userKeyL);
-			String empNo = populateEmpplyeeNumber(userKeyL);
-			String displayName = populateDisplayName(userKeyL);
-			String description = populateDescription(userKeyL);
-			String company = populateCompany(userKeyL);
-			String phyOfcName = populatphyOfcName(userKeyL);
-			String streeAddress = populateStreetAddress(userKeyL);
-			String title = populateTitle(userKeyL);
-			String telephone = populateTelephone(userKeyL);
+		String distinguishName = "";
+		String sAMAccountName = "";
+		String userPrincipalName = "";
+		String ext8 = "";
+		String ext5 = "";
+		String ext9 = "";
+		String o = "";
+		String businessCategory = "";
+		String empNo = "";
 
+		String itResourceName = OIMUtility.getITResourceNameFromUserProcesssForm(formInstanceOperationsIntf,
+				itResourceinstanceOperationsIntf, processInstanceKeyL);
+		User user = OIMUtility.getUserProfile(strUserkey);
+		log.fine("itResourceName1" + itResourceName);
+		try {
+			if (itResourceName.toLowerCase().contains("succ")) {
+				sAMAccountName = populatesAMAccountName(processInstanceKeyL, strUserkey, user);
+				userPrincipalName = polpulateUserPrincipalNAme(processInstanceKeyL, strUserkey, user);
+				empNo = populateEmployeeNumber(strUserkey, user);
+				log.fine("sAMAccountName " + sAMAccountName + "userPrincipalName " + userPrincipalName + "empNo "
+						+ empNo);
+
+				procFormHash.put("UD_ADUSER_UID", sAMAccountName);
+				procFormHash.put("UD_ADUSER_USERPRINCIPALNAME", userPrincipalName);
+				procFormHash.put("UD_ADUSER_EMPLOYEENUMBER", empNo);
+
+			}
+			if (itResourceName.toLowerCase().contains("ad-res")) {
+				log.fine("Commited code");
+				/*
+				 * ext8 = populateExensionAttr8(processInstanceKeyL, strUserkey,
+				 * user); ext5 = populateExensionAttr5(processInstanceKeyL,
+				 * strUserkey, user); ext9 =
+				 * populateExensionAttr9(processInstanceKeyL, strUserkey); o =
+				 * populateO(processInstanceKeyL, strUserkey, user);
+				 * businessCategory =
+				 * populateBusinessCategory(processInstanceKeyL, strUserkey,
+				 * user);
+				 */
+				empNo = populateEmployeeNumber(strUserkey, user);
+				/*
+				 * procFormHash.put("UD_ADUSER_EXT9", ext9);
+				 * procFormHash.put("UD_ADUSER_EXT5", ext5);
+				 * procFormHash.put("UD_ADUSER_EXT8", ext8);
+				 * procFormHash.put("UD_ADUSER_O", o);
+				 * procFormHash.put("UD_ADUSER_BUSINESSCATEGORY",
+				 * businessCategory);
+				 */
+				procFormHash.put("UD_ADUSER_EMPLOYEENUMBER", empNo);
+
+			}
+			if (itResourceName.toLowerCase().contains("lbg")) {
+				empNo = populateEmployeeNumber(strUserkey, user);
+				procFormHash.put("UD_ADUSER_EMPLOYEENUMBER", empNo + "-l");
+			}
+			distinguishName = populateDistinguishedName(processInstanceKeyL, strUserkey, itResourceName, user);
+			log.fine("distinguishName" + distinguishName);
 			procFormHash.put("UD_ADUSER_DISTINGUISHEDNAME", distinguishName);
-			procFormHash.put("UD_ADUSER_EMPLOYEENUMBER", empNo);
-			procFormHash.put("UD_ADUSER_FULLNAME", displayName);
-			procFormHash.put("UD_ADUSER_DESCRIPTION", description);
-			procFormHash.put("UD_ADUSER_COMPANY", company);
-			procFormHash.put("UD_ADUSER_OFFICE", phyOfcName);
-			procFormHash.put("UD_ADUSER_STREET", streeAddress);
-			procFormHash.put("UD_ADUSER_TELEPHONE", telephone);
-			procFormHash.put("UD_ADUSER_TITLE", title);
+			if (procFormHash != null && procFormHash.size() > 0)
+				formInstanceOperationsIntf.setProcessFormData(processInstanceKeyL, procFormHash);
+			response = "SUCCESS";
+		} catch (Exception e) {
+			log.log(Level.SEVERE, "preActionsOnADCreateUser", e);
+		}
+		log.exiting(getClass().getName(), "preActionsOnADCreateUser");
+		return response;
+	}
+
+	public String postActionsOnADCreateUser(String processInstanceKey, String strUserkey)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "postActionsOnADCreateUser");
+		log.fine("processInstanceKey" + processInstanceKey + "strUserkey" + strUserkey);
+		long processInstanceKeyL = Long.parseLong(processInstanceKey);
+		tcFormInstanceOperationsIntf formInstanceOperationsIntf = null;
+		formInstanceOperationsIntf = Platform.getService(tcFormInstanceOperationsIntf.class);
+		// long userKeyL = Long.parseLong(strUserkey);
+		HashMap<String, String> procFormHash = new HashMap<String, String>();
+		String response = "FAILURE";
+		String itResourceName = OIMUtility.getITResourceNameFromUserProcesssForm(formInstanceOperationsIntf,
+				itResourceinstanceOperationsIntf, processInstanceKeyL);
+
+		String description = "";
+		String company = "";
+		String phyOfcName = "";
+		String streeAddress = "";
+		String title = "";
+		String telephone = "";
+		// String ext8 = "";
+		// String ext5 = "";
+		// String ext9 = "";
+		// String o = "";
+		// String businessCategory = "";
+		User user = OIMUtility.getUserProfile(strUserkey);
+		log.fine("itResourceName1" + itResourceName);
+		try {
+
+			if (itResourceName.toLowerCase().contains("ad-res")) {
+				description = populateDescription(strUserkey, user);
+				company = populateCompany(strUserkey, user);
+				phyOfcName = populatphyOfcName(strUserkey, user);
+				streeAddress = populateStreetAddress(strUserkey, user);
+				title = populateTitle(strUserkey, user);
+				telephone = populateTelephone(strUserkey, user);
+				procFormHash.put("UD_ADUSER_DESCRIPTION", description);
+				procFormHash.put("UD_ADUSER_COMPANY", company);
+				procFormHash.put("UD_ADUSER_OFFICE", phyOfcName);
+				procFormHash.put("UD_ADUSER_STREET", streeAddress);
+				procFormHash.put("UD_ADUSER_TELEPHONE", telephone);
+				procFormHash.put("UD_ADUSER_TITLE", title);
+
+			} else if (itResourceName.toLowerCase().contains("lbg")) {
+				// empNo = populateEmployeeNumber(strUserkey, user);
+				description = populateDescription(strUserkey, user);
+				company = populateCompany(strUserkey, user);
+				phyOfcName = populatphyOfcName(strUserkey, user);
+				streeAddress = populateStreetAddress(strUserkey, user);
+				title = populateTitle(strUserkey, user);
+				telephone = populateTelephone(strUserkey, user);
+				procFormHash.put("UD_ADUSER_DESCRIPTION", description);
+				procFormHash.put("UD_ADUSER_COMPANY", company);
+				procFormHash.put("UD_ADUSER_OFFICE", phyOfcName);
+				procFormHash.put("UD_ADUSER_STREET", streeAddress);
+				procFormHash.put("UD_ADUSER_TELEPHONE", telephone);
+				procFormHash.put("UD_ADUSER_TITLE", title);
+
+			} else if (itResourceName.toLowerCase().contains("succ")) {
+				// empNo = populateEmployeeNumber(strUserkey, user);
+				description = populateDescription(strUserkey, user);
+				company = populateCompany(strUserkey, user);
+				streeAddress = populateStreetAddress(strUserkey, user);
+				title = populateTitle(strUserkey, user);
+				// procFormHash.put("UD_ADUSER_EMPLOYEENUMBER", empNo);
+				procFormHash.put("UD_ADUSER_DESCRIPTION", description);
+				procFormHash.put("UD_ADUSER_COMPANY", company);
+				procFormHash.put("UD_ADUSER_STREET", streeAddress);
+				procFormHash.put("UD_ADUSER_TITLE", title);
+			}
 
 			if (procFormHash != null && procFormHash.size() > 0)
 				formInstanceOperationsIntf.setProcessFormData(processInstanceKeyL, procFormHash);
@@ -89,8 +214,103 @@ public class ADProvisioning {
 			log.log(Level.SEVERE, "preActionsOnADCreateUser", e);
 
 		}
-		log.exiting(getClass().getName(), "preActionsOnADCreateUser");
+		log.exiting(getClass().getName(), "postActionsOnADCreateUser");
 		return response;
+	}
+
+	private String polpulateUserPrincipalNAme(long processInstanceKeyL, String userKey, User user)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "polpulateUserPrincipalNAme");
+		log.fine("processInstanceKey" + processInstanceKeyL + "userKey" + userKey);
+		String userPrincipalNAme = (String) user.getAttribute(Constants.UserAttributes.RESupn);
+		String actualUserPrincipal = "";
+		log.fine("userPrincipalNAme" + userPrincipalNAme);
+		String prefixArray[] = userPrincipalNAme.split("@");
+		actualUserPrincipal = prefixArray[0] + "@succ.bnc.ca";
+		log.fine("actualUserPrincipal" + actualUserPrincipal);
+		log.exiting(getClass().getName(), "polpulateUserPrincipalNAme");
+		return actualUserPrincipal;
+	}
+
+	private String populateBusinessCategory(long processInstanceKeyL, String userKey, User user)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateBusinessCategory");
+		String businessCategory = null;
+		businessCategory = (String) user.getAttribute("PVP");
+		if (isNullOrEmpty(businessCategory)) {
+			businessCategory = "";
+		}
+		log.fine("businessCategory=" + businessCategory);
+		log.exiting(getClass().getName(), "populateBusinessCategory");
+		return businessCategory;
+	}
+
+	private String populateExensionAttr8(long procInstKey, String userKey, User user)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateExensionAttr8");
+		log.fine("procInstKey=" + procInstKey + ", userKey=" + userKey);
+		String ext8 = (String) user.getAttribute(Constants.UserAttributes.ISMLogin);
+		if (isNullOrEmpty(ext8)) {
+			ext8 = "";
+		}
+		log.fine("ext8=" + ext8);
+		log.exiting(getClass().getName(), "populateExensionAttr8");
+		return ext8;
+	}
+
+	private String populateExensionAttr5(long procInstKey, String userKey, User user)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateExensionAttr5");
+		String ext5 = "";
+		log.fine("procInstKey=" + procInstKey + ", userKey=" + userKey);
+		String succursale = (String) user.getAttribute(Constants.UserAttributes.SUCCURSALE);
+		if (!isNullOrEmpty(succursale) && succursale.contains("1")) {
+			ext5 = "W8-SUCC";
+		} else if (!isNullOrEmpty(succursale) && succursale.contains("0")) {
+			ext5 = "W8";
+		} else {
+			ext5 = "";
+
+		}
+		log.fine("ext5=" + ext5);
+		log.exiting(getClass().getName(), "populateExensionAttr5");
+		return ext5;
+	}
+
+	private String populateExensionAttr9(long procInstKey, String userKeyL)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateExensionAttr9");
+
+		log.fine("procInstKey=" + procInstKey + ", userKey=" + userKeyL);
+		log.exiting(getClass().getName(), "populateExensionAttr9");
+		return "111001000000";
+	}
+
+	private String populateO(long procInstKey, String userKey, User user)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateO");
+		String o = "";
+		log.fine("procInstKey=" + procInstKey + ", userKey=" + userKey);
+
+		String worktansit = (String) user.getAttribute(Constants.UserAttributes.SUCCURSALE);
+		if (!isNullOrEmpty(worktansit) && worktansit.contains("1")) {
+			o = "SUCC";
+		} else {
+			o = "";
+		}
+		log.exiting(getClass().getName(), "populateO");
+		return o;
+	}
+
+	private String populatesAMAccountName(long procInstKey, String userKey, User user)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populatesAMAccountName");
+		log.fine("procInstKey=" + procInstKey + ", userKey=" + userKey);
+		String sAMAccountName = (String) user.getAttribute(UserManagerConstants.AttributeName.EMPLOYEE_NUMBER.getId());
+		if (isNullOrEmpty(sAMAccountName))
+			sAMAccountName = "";
+		log.exiting(getClass().getName(), "populatesAMAccountName");
+		return sAMAccountName;
 	}
 
 	/**
@@ -105,19 +325,20 @@ public class ADProvisioning {
 	 * @throws AccessDeniedException
 	 * @throws ParseException
 	 */
-	private String populateDescription(long userKeyL) throws NoSuchUserException, UserLookupException,
+	private String populateDescription(String userKey, User user) throws NoSuchUserException, UserLookupException,
 			SearchKeyNotUniqueException, AccessDeniedException, ParseException {
+		log.entering(getClass().getName(), "populateDescription");
+
 		String description = null;
 		String prefixdesc = null;
 		String date = null;
 		String strStartDate = null;
 		String strEndDate = null;
-		String strUserkey = String.valueOf(userKeyL);
-		User user = OIMUtility.getUserProfile(strUserkey);
+		// String strUserkey = String.valueOf(userKeyL);
 		String cc = (String) user.getAttribute(Constants.UserAttributes.COUNTRY_CODE);
 		String status = (String) user.getAttribute(UserManagerConstants.AttributeName.STATUS.getName());
 		log.fine("status=" + status);
-
+		log.fine("cc=" + cc);
 		Date startDate = (Date) user.getAttribute(UserManagerConstants.AttributeName.ACCOUNT_START_DATE.getId());
 		Date endDate = (Date) user.getAttribute(UserManagerConstants.AttributeName.ACCOUNT_END_DATE.getId());
 		String fnUsed = (String) user.getAttribute(Constants.UserAttributes.FirstNameUsed);
@@ -162,7 +383,8 @@ public class ADProvisioning {
 			}
 			description = prefixdesc + lnUsed + "." + fnUsed + " " + date;
 		}
-		log.exiting("ADProvisoning", "populateDistinguishedName");
+		log.fine("description=" + description);
+		log.exiting(getClass().getName(), "populateDescription");
 		return description;
 	}
 
@@ -191,61 +413,63 @@ public class ADProvisioning {
 	 * @throws SearchKeyNotUniqueException
 	 * @throws AccessDeniedException
 	 */
-	private String populateDistinguishedName(long procInstKey, long userKey) throws tcCryptoException, tcAPIException,
-			tcUserAccountDisabledException, tcPasswordResetAttemptsExceededException, tcLoginAttemptsExceededException,
-			tcUserAccountInvalidException, tcUserAlreadyLoggedInException, tcProcessNotFoundException,
-			tcFormNotFoundException, tcNotAtomicProcessException, tcVersionNotFoundException, tcInvalidValueException,
+	private String populateDistinguishedName(long procInstKey, String userKey, String itResourceName, User user)
+			throws tcCryptoException, tcAPIException, tcUserAccountDisabledException,
+			tcPasswordResetAttemptsExceededException, tcLoginAttemptsExceededException, tcUserAccountInvalidException,
+			tcUserAlreadyLoggedInException, tcProcessNotFoundException, tcFormNotFoundException,
+			tcNotAtomicProcessException, tcVersionNotFoundException, tcInvalidValueException,
 			tcRequiredDataMissingException, tcColumnNotFoundException, NoSuchUserException, UserLookupException,
 			SearchKeyNotUniqueException, AccessDeniedException {
 
 		log.entering(getClass().getName(), "populateDistinguishedName");
-		tcFormInstanceOperationsIntf formInstanceOperationsIntf = null;
-		tcITResourceInstanceOperationsIntf itResourceinstanceOperationsIntf = null;
-		formInstanceOperationsIntf = Platform.getService(tcFormInstanceOperationsIntf.class);
-		itResourceinstanceOperationsIntf = Platform.getService(tcITResourceInstanceOperationsIntf.class);
+		log.fine("ADProvisoning/populateDistinguishedName procInstKey=" + procInstKey + ", userKey=" + userKey
+				+ "itResourceName " + itResourceName);
 
-		log.fine("ADProvisoning/populateDistinguishedName procInstKey=" + procInstKey + ", userKey=" + userKey);
-		String itResourceName = OIMUtility.getITResourceNameFromUserProcesssForm(formInstanceOperationsIntf,
-				itResourceinstanceOperationsIntf, procInstKey);
-		String strUserkey = String.valueOf(userKey);
-		log.fine("itResourceName1" + itResourceName);
 		String userLogin = null;
 		String PVP = null;
 		String distinguishedName = null;
 
-		User user = OIMUtility.getUserProfile(strUserkey);
 		userLogin = (String) user.getAttribute(UserManagerConstants.AttributeName.USER_LOGIN.getId());
 		log.fine("userLogin" + userLogin);
-		PVP = (String) user.getAttribute("PVP");
-
-		if (itResourceName.equalsIgnoreCase("AD-RES Main IT Resource")) {
-			String ou = lookupOperationsIntf.getDecodedValueForEncodedValue(CONFIGLOOKUP, "AD_RES");
-
-			if (PVP.isEmpty()) {
-				distinguishedName = "cn=" + userLogin + ou;
+		if (itResourceName.toLowerCase().contains("ad-res")) {
+			String ou_RES = lookupOperationsIntf.getDecodedValueForEncodedValue(CONFIGLOOKUP, "AD_OU_RES");
+			PVP = (String) user.getAttribute("PVPCode");
+			String PVP1 = lookupOperationsIntf.getDecodedValueForEncodedValue("Lookup.BNC.PVP", PVP);
+			String PVPOU = lookupOperationsIntf.getDecodedValueForEncodedValue(CONFIGLOOKUP, "AD_OU_RES_PVP");
+			log.fine("ou_RES" + ou_RES);
+			log.fine("PVP " + PVP);
+			log.fine("PVP1 " + PVP1);
+			log.fine("PVPOU " + PVPOU);
+			if (isNullOrEmpty(PVP)) {
+				distinguishedName = "CN=" + userLogin + "," + ou_RES;
 				// "ou=Users,ou= WKS-MIG,OU=W8Only,DC=res,DC=bngf,DC=local";
 			} else {
+				log.fine("PVP1 is not null: " + PVP);
+				distinguishedName = "CN=" + userLogin + "," + PVPOU;
+				// ",ou=Users,ou=" + PVP +","+ PVPOU;
+				// "OU=W8Only,DC=res,DC=bngf,DC=local";
 			}
-		} else if (itResourceName.equalsIgnoreCase("AD-SUCC Main IT Resource")) {
-			String ou = lookupOperationsIntf.getDecodedValueForEncodedValue(CONFIGLOOKUP, "AD_SUCC");
+		} else if (itResourceName.toLowerCase().contains("succ")) {
+			// String ou =
+			// lookupOperationsIntf.getDecodedValueForEncodedValue(CONFIGLOOKUP,
+			// "AD_SUCC");
 
-			distinguishedName = "cn=" + userLogin + ou;
+			// distinguishedName = "CN=" + userLogin + ou;
 			// "ou=Users,ou= WKS-MIG,OU=W8Only,DC=res,DC=bngf,DC=local";
 
-		} else if (itResourceName.equalsIgnoreCase("AD-LBG Main IT Resource")) {
-
-			String ou = lookupOperationsIntf.getDecodedValueForEncodedValue(CONFIGLOOKUP, "AD_LBG");
-			log.fine("ou " + ou);
-			if (isNullOrEmpty(ou)) {
-				log.fine("Missing entry for OU ");
-				distinguishedName = "";
-			} else {
-				distinguishedName = "CN=" + userLogin + "," + ou;
-				// "ou=Users,ou= LinkedMailboxes,ou=Internal,dc=nbfg, dc=ca";
-			}
-			log.fine("distinguishedName :" + distinguishedName);
-		}
-		log.exiting("ADProvisoning", "populateDistinguishedName");
+		} /*
+			 * else if (itResourceName.equalsIgnoreCase(
+			 * "AD-LBG Main IT Resource")) {
+			 * 
+			 * String ou =
+			 * lookupOperationsIntf.getDecodedValueForEncodedValue(CONFIGLOOKUP,
+			 * "AD_LBG"); log.fine("ou " + ou); if (isNullOrEmpty(ou)) {
+			 * log.fine("Missing entry for OU "); distinguishedName = ""; } else
+			 * { distinguishedName = "CN=" + userLogin + "," + ou; //
+			 * "ou=Users,ou= LinkedMailboxes,ou=Internal,dc=nbfg, dc=ca"; } }
+			 */
+		log.fine("distinguishedName :" + distinguishedName);
+		log.exiting(getClass().getName(), "populateDistinguishedName");
 		return distinguishedName;
 	}
 
@@ -259,19 +483,42 @@ public class ADProvisioning {
 	 * @throws SearchKeyNotUniqueException
 	 * @throws AccessDeniedException
 	 */
-	private String populateEmpplyeeNumber(long userKeyL)
+	private String populateEmployeeNumber(String userKey, User user)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateEmployeeNumber");
 		String accountID = null;
-
-		String strUserkey = String.valueOf(userKeyL);
-		User user = OIMUtility.getUserProfile(strUserkey);
 		accountID = (String) user.getAttribute(Constants.UserAttributes.AccountId);
 		log.fine("accountID" + accountID);
 		if (isNullOrEmpty(accountID)) {
-			return "";
-		} else {
-			return accountID + "-l";
+			accountID = "";
 		}
+		log.fine("accountID=" + accountID);
+		log.exiting(getClass().getName(), "populateEmployeeNumber");
+		return accountID;
+	}
+
+	/**
+	 * This method populates employee number according to account ID.
+	 * 
+	 * @param userKeyL
+	 * @return
+	 * @throws NoSuchUserException
+	 * @throws UserLookupException
+	 * @throws SearchKeyNotUniqueException
+	 * @throws AccessDeniedException
+	 */
+	private String populateCountry(String userKey, User user)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateEmployeeNumber");
+		String cc = "";
+		cc = (String) user.getAttribute(Constants.UserAttributes.COUNTRY_CODE);
+		log.fine("cc" + cc);
+		if (isNullOrEmpty(cc)) {
+			cc = "";
+		}
+		log.fine("cc=" + cc);
+		log.exiting(getClass().getName(), "populateEmployeeNumber");
+		return cc;
 	}
 
 	/**
@@ -297,54 +544,64 @@ public class ADProvisioning {
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException,
 			tcAPIException, tcInvalidValueException, tcNotAtomicProcessException, tcFormNotFoundException,
 			tcRequiredDataMissingException, tcProcessNotFoundException, ParseException {
+		log.entering(getClass().getName(), "propagateChangesFromUserProfileToAD");
+		log.fine("processInstanceKey= " + processInstanceKey + " userKey= " + userKey + " adAttribute= " + adAttribute);
+
 		String response = "FAILURE";
 		tcFormInstanceOperationsIntf formInstanceOperationsIntf = null;
 		long processInstanceKeyL = Long.parseLong(processInstanceKey);
 
 		HashMap<String, String> procFormHash = new HashMap<String, String>();
-		long userKeyL = Long.parseLong(userKey);
+
 		formInstanceOperationsIntf = Platform.getService(tcFormInstanceOperationsIntf.class);
+		User user = OIMUtility.getUserProfile(userKey);
+		if (adAttribute.equalsIgnoreCase("pvp")) {
+			String businessCategory = populateBusinessCategory(processInstanceKeyL, userKey, user);
+			procFormHash.put("UD_ADUSER_BUSINESSCATEGORY", businessCategory);
+		}
 
 		if (adAttribute.equalsIgnoreCase("lastNameUsed") || adAttribute.equalsIgnoreCase("firstNameUsed")) {
-			String displayName = populateDisplayName(userKeyL);
+			String displayName = populateDisplayName(userKey, user);
 			procFormHash.put("UD_ADUSER_FULLNAME", displayName);
 			if (adAttribute.equalsIgnoreCase("lastNameUsed")) {
-				String lastName = populateLastName(userKeyL);
+				String lastName = populateLastName(userKey, user);
 				procFormHash.put("UD_ADUSER_LNAME", lastName);
 			}
 			if (adAttribute.equalsIgnoreCase("firstNameUsed")) {
-				String firstName = populateFirstName(userKeyL);
+				String firstName = populateFirstName(userKey, user);
 				procFormHash.put("UD_ADUSER_FNAME", firstName);
 			}
 		}
 
 		if (adAttribute.equalsIgnoreCase("worktansit") || adAttribute.equalsIgnoreCase("transitDescription")) {
-			String company = populateCompany(userKeyL);
-			String phyOfcName = populatphyOfcName(userKeyL);
+			log.fine("adAttribute= " + adAttribute);
+
+			String company = populateCompany(userKey, user);
+			String phyOfcName = populatphyOfcName(userKey, user);
+			log.fine("company= " + company + " phyOfcName= " + phyOfcName);
 
 			procFormHash.put("UD_ADUSER_COMPANY", company);
 			procFormHash.put("UD_ADUSER_OFFICE", phyOfcName);
 			if (adAttribute.equalsIgnoreCase("worktansit")) {
-				String dept = populateDepartmrnt(userKeyL);
+				String dept = populateDepartment(userKey, user);
 				procFormHash.put("UD_ADUSER_DEPARTMENT", dept);
 			}
-
 		}
 
 		if (adAttribute.equalsIgnoreCase("officeStreetNo") || adAttribute.equalsIgnoreCase("officeStreetName")
 				|| adAttribute.equalsIgnoreCase("siteName")) {
-			String streeAddress = populateStreetAddress(userKeyL);
+			String streeAddress = populateStreetAddress(userKey, user);
 			procFormHash.put("UD_ADUSER_STREET", streeAddress);
 		}
 
 		if (adAttribute.equalsIgnoreCase("officePhoneDirect")) {
-			String telephone = populateTelephone(userKeyL);
+			String telephone = populateTelephone(userKey, user);
 			procFormHash.put("UD_ADUSER_TELEPHONE", telephone);
 		}
 
 		if (adAttribute.equalsIgnoreCase("prefLang") || adAttribute.equalsIgnoreCase("functionEN")
 				|| adAttribute.equalsIgnoreCase("functionFR")) {
-			String title = populateTitle(userKeyL);
+			String title = populateTitle(userKey, user);
 			procFormHash.put("UD_ADUSER_TITLE", title);
 		}
 
@@ -352,25 +609,31 @@ public class ADProvisioning {
 				|| adAttribute.equalsIgnoreCase("LASTNameUsed") || adAttribute.equalsIgnoreCase("status")
 				|| adAttribute.equalsIgnoreCase("StartDate") || adAttribute.equalsIgnoreCase("EndDate")) {
 
-			String description = populateDescription(userKeyL);
+			String description = populateDescription(userKey, user);
 			procFormHash.put("UD_ADUSER_DESCRIPTION", description);
+			if (adAttribute.equalsIgnoreCase("CountryCode")) {
+				String cc = populateCountry(userKey, user);
+				procFormHash.put("UD_ADUSER_COUNTRY", cc);
+			}
 		}
 		if (procFormHash != null && procFormHash.size() > 0) {
 			formInstanceOperationsIntf.setProcessFormData(processInstanceKeyL, procFormHash);
 			response = "SUCCESS";
 		}
+		log.exiting(getClass().getName(), "propagateChangesFromUserProfileToAD");
 		return response;
 	}
 
-	private String populateDepartmrnt(long userKeyL)
+	private String populateDepartment(String userKey, User user)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
-
-		String strUserkey = String.valueOf(userKeyL);
-		User user = OIMUtility.getUserProfile(strUserkey);
+		log.entering(getClass().getName(), "populateDepartment");
 		String workTransit = (String) user.getAttribute(Constants.UserAttributes.WORK_TRANSIT);
-
+		if (isNullOrEmpty(workTransit)) {
+			workTransit = "";
+		}
+		log.fine("workTransit=" + workTransit);
+		log.exiting(getClass().getName(), "populateDepartment");
 		return workTransit;
-
 	}
 
 	/**
@@ -394,11 +657,10 @@ public class ADProvisioning {
 	 * @throws SearchKeyNotUniqueException
 	 * @throws AccessDeniedException
 	 */
-	private String populateTitle(long userKeyL)
+	private String populateTitle(String userKey, User user)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateTitle");
 		String title = null;
-		String strUserkey = String.valueOf(userKeyL);
-		User user = OIMUtility.getUserProfile(strUserkey);
 		String prefLang = (String) user.getAttribute(Constants.UserAttributes.PREF_LANG);
 		String funEN = (String) user.getAttribute(Constants.UserAttributes.Function_EN);
 		String funFR = (String) user.getAttribute(Constants.UserAttributes.Function_FR);
@@ -418,6 +680,8 @@ public class ADProvisioning {
 				}
 			}
 		}
+		log.fine("title=" + title);
+		log.exiting(getClass().getName(), "populateTitle");
 		return title;
 	}
 
@@ -431,16 +695,17 @@ public class ADProvisioning {
 	 * @throws SearchKeyNotUniqueException
 	 * @throws AccessDeniedException
 	 */
-	private String populateTelephone(long userKeyL)
+	private String populateTelephone(String userKey, User user)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateTelephone");
 		String telephone = null;
-		String strUserkey = String.valueOf(userKeyL);
-		User user = OIMUtility.getUserProfile(strUserkey);
 		String ofcPhoneDirect = (String) user.getAttribute(Constants.UserAttributes.Office_Phone_Direct);// ======
 		if (!isNullOrEmpty(ofcPhoneDirect)) {
 			telephone = "+1." + ofcPhoneDirect.substring(0, 3) + "." + ofcPhoneDirect.substring(3, 6) + "."
 					+ ofcPhoneDirect.substring(6);
 		}
+		log.fine("telephone=" + telephone);
+		log.exiting(getClass().getName(), "populateTelephone");
 		return telephone;
 	}
 
@@ -455,11 +720,10 @@ public class ADProvisioning {
 	 * @throws SearchKeyNotUniqueException
 	 * @throws AccessDeniedException
 	 */
-	private String populateStreetAddress(long userKeyL)
+	private String populateStreetAddress(String userKey, User user)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateStreetAddress");
 		String streetAddress = null;
-		String strUserkey = String.valueOf(userKeyL);
-		User user = OIMUtility.getUserProfile(strUserkey);
 		String ofcStreetNo = (String) user.getAttribute(Constants.UserAttributes.OFFICE_STREET_NUMBER);
 		String ofcStreetName = (String) user.getAttribute(Constants.UserAttributes.OFFICE_STREET_NAME);
 		String siteName = (String) user.getAttribute(Constants.UserAttributes.SITE_NAME);
@@ -474,7 +738,8 @@ public class ADProvisioning {
 			siteName = "";
 		}
 		streetAddress = ofcStreetNo + " " + ofcStreetName + " " + siteName;
-
+		log.fine("streetAddress=" + streetAddress);
+		log.exiting(getClass().getName(), "populateStreetAddress");
 		return streetAddress;
 	}
 
@@ -489,11 +754,10 @@ public class ADProvisioning {
 	 * @throws SearchKeyNotUniqueException
 	 * @throws AccessDeniedException
 	 */
-	private String populatphyOfcName(long userKeyL)
+	private String populatphyOfcName(String userKey, User user)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populatphyOfcName");
 		String phyOfcName = null;
-		String strUserkey = String.valueOf(userKeyL);
-		User user = OIMUtility.getUserProfile(strUserkey);
 		String workTransit = (String) user.getAttribute(Constants.UserAttributes.WORK_TRANSIT);
 		String transitDesc = (String) user.getAttribute(Constants.UserAttributes.TRANSIT_DESCRIPTION);
 		if (isNullOrEmpty(workTransit)) {
@@ -503,6 +767,8 @@ public class ADProvisioning {
 			transitDesc = "";
 		}
 		phyOfcName = workTransit + "|" + transitDesc;
+		log.fine("phyOfcName=" + phyOfcName);
+		log.exiting(getClass().getName(), "populatphyOfcName");
 		return phyOfcName;
 	}
 
@@ -517,11 +783,10 @@ public class ADProvisioning {
 	 * @throws SearchKeyNotUniqueException
 	 * @throws AccessDeniedException
 	 */
-	private String populateCompany(long userKeyL)
+	private String populateCompany(String userKey, User user)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateCompany");
 		String company = null;
-		String strUserkey = String.valueOf(userKeyL);
-		User user = OIMUtility.getUserProfile(strUserkey);
 		String workTransit = (String) user.getAttribute(Constants.UserAttributes.WORK_TRANSIT);
 		String transitDesc = (String) user.getAttribute(Constants.UserAttributes.TRANSIT_DESCRIPTION);
 		if (isNullOrEmpty(workTransit)) {
@@ -531,6 +796,8 @@ public class ADProvisioning {
 			transitDesc = "";
 		}
 		company = "BNC/" + workTransit + "-" + transitDesc;
+		log.fine("company=" + company);
+		log.exiting(getClass().getName(), "populateCompany");
 		return company;
 	}
 
@@ -545,13 +812,12 @@ public class ADProvisioning {
 	 * @throws SearchKeyNotUniqueException
 	 * @throws AccessDeniedException
 	 */
-	private String populateDisplayName(long userKeyL)
+	public String populateDisplayName(String userKey, User user)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateDisplayName");
 		String fnUsed = null;
 		String lnUsed = null;
 		String displayName = null;
-		String strUserkey = String.valueOf(userKeyL);
-		User user = OIMUtility.getUserProfile(strUserkey);
 		fnUsed = (String) user.getAttribute(Constants.UserAttributes.FirstNameUsed);
 		lnUsed = (String) user.getAttribute(Constants.UserAttributes.LastNameUsed);
 		if (isNullOrEmpty(fnUsed)) {
@@ -561,6 +827,8 @@ public class ADProvisioning {
 			lnUsed = "";
 		}
 		displayName = lnUsed + "," + fnUsed;
+		log.fine("displayName=" + displayName);
+		log.exiting(getClass().getName(), "populateDisplayName");
 		return displayName;
 	}
 
@@ -575,12 +843,42 @@ public class ADProvisioning {
 	 * @throws SearchKeyNotUniqueException
 	 * @throws AccessDeniedException
 	 */
-	private String populateLastName(long userKeyL)
+	public String prepopulateDisplayName(String firstNameUsed, String lastNameUsed)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateDisplayName");
+
+		if (isNullOrEmpty(firstNameUsed)) {
+			firstNameUsed = "";
+		}
+		if (isNullOrEmpty(lastNameUsed)) {
+			lastNameUsed = "";
+		}
+		String displayName = lastNameUsed + "," + firstNameUsed;
+		log.fine("displayName=" + displayName);
+		log.exiting(getClass().getName(), "populateDisplayName");
+		return displayName;
+	}
+
+	/**
+	 * This method populate Display name according to First Name Used and Last
+	 * Name Used.
+	 * 
+	 * @param userKeyL
+	 * @return
+	 * @throws NoSuchUserException
+	 * @throws UserLookupException
+	 * @throws SearchKeyNotUniqueException
+	 * @throws AccessDeniedException
+	 */
+	private String populateLastName(String userKey, User user)
+			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateLastName");
 		String lnUsed = null;
-		String strUserkey = String.valueOf(userKeyL);
-		User user = OIMUtility.getUserProfile(strUserkey);
 		lnUsed = (String) user.getAttribute(Constants.UserAttributes.LastNameUsed);
+		if (isNullOrEmpty(lnUsed)) {
+			lnUsed = "";
+		}
+		log.exiting(getClass().getName(), "populateLastName");
 		return lnUsed;
 	}
 
@@ -595,12 +893,16 @@ public class ADProvisioning {
 	 * @throws SearchKeyNotUniqueException
 	 * @throws AccessDeniedException
 	 */
-	private String populateFirstName(long userKeyL)
+	private String populateFirstName(String userKey, User user)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
+		log.entering(getClass().getName(), "populateFirstName");
 		String fnUsed = null;
-		String strUserkey = String.valueOf(userKeyL);
-		User user = OIMUtility.getUserProfile(strUserkey);
 		fnUsed = (String) user.getAttribute(Constants.UserAttributes.FirstNameUsed);
+		if (isNullOrEmpty(fnUsed)) {
+			fnUsed = "";
+		}
+		log.fine("fnUsed=" + fnUsed);
+		log.exiting(getClass().getName(), "populateFirstName");
 		return fnUsed;
 	}
 
