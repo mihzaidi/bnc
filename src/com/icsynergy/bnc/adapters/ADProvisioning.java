@@ -38,7 +38,6 @@ import com.icsynergy.bnc.OIMUtility;
 
 public class ADProvisioning {
 	final private static Logger log = Logger.getLogger("com.icsynergy");
-	private final String CONFIGLOOKUP = "Lookup.BNC.AD.Config";
 	private tcLookupOperationsIntf lookupOperationsIntf = Platform.getService(tcLookupOperationsIntf.class);
 	tcFormInstanceOperationsIntf formInstanceOperationsIntf = Platform.getService(tcFormInstanceOperationsIntf.class);;
 	tcITResourceInstanceOperationsIntf itResourceinstanceOperationsIntf = Platform
@@ -97,27 +96,18 @@ public class ADProvisioning {
 			}
 			if (itResourceName.toLowerCase().contains("ad-res")) {
 				log.fine("Commited code");
-				/*
-				 * ext8 = populateExensionAttr8(processInstanceKeyL, strUserkey,
-				 * user); ext5 = populateExensionAttr5(processInstanceKeyL,
-				 * strUserkey, user); ext9 =
-				 * populateExensionAttr9(processInstanceKeyL, strUserkey); o =
-				 * populateO(processInstanceKeyL, strUserkey, user);
-				 * businessCategory =
-				 * populateBusinessCategory(processInstanceKeyL, strUserkey,
-				 * user);
-				 */
+				ext8 = populateExensionAttr8(processInstanceKeyL, strUserkey, user);
+				ext5 = populateExensionAttr5(processInstanceKeyL, strUserkey, user);
+				ext9 = populateExensionAttr9(processInstanceKeyL, strUserkey);
+				o = populateO(processInstanceKeyL, strUserkey, user);
+				businessCategory = populateBusinessCategory(processInstanceKeyL, strUserkey, user);
 				empNo = populateEmployeeNumber(strUserkey, user);
-				/*
-				 * procFormHash.put("UD_ADUSER_EXT9", ext9);
-				 * procFormHash.put("UD_ADUSER_EXT5", ext5);
-				 * procFormHash.put("UD_ADUSER_EXT8", ext8);
-				 * procFormHash.put("UD_ADUSER_O", o);
-				 * procFormHash.put("UD_ADUSER_BUSINESSCATEGORY",
-				 * businessCategory);
-				 */
+				procFormHash.put("UD_ADUSER_EXT9", ext9);
+				procFormHash.put("UD_ADUSER_EXT5", ext5);
+				procFormHash.put("UD_ADUSER_EXT8", ext8);
+				procFormHash.put("UD_ADUSER_O", o);
+				procFormHash.put("UD_ADUSER_BUSINESSCATEGORY", businessCategory);
 				procFormHash.put("UD_ADUSER_EMPLOYEENUMBER", empNo);
-
 			}
 			if (itResourceName.toLowerCase().contains("lbg")) {
 				empNo = populateEmployeeNumber(strUserkey, user);
@@ -130,6 +120,10 @@ public class ADProvisioning {
 				formInstanceOperationsIntf.setProcessFormData(processInstanceKeyL, procFormHash);
 			response = "SUCCESS";
 		} catch (Exception e) {
+			String error = e.getMessage();
+			if (error.equals("AD_SUCC_FAILED")) {
+				response = "AD_SUCC_FAILED";
+			}
 			log.log(Level.SEVERE, "preActionsOnADCreateUser", e);
 		}
 		log.exiting(getClass().getName(), "preActionsOnADCreateUser");
@@ -143,7 +137,6 @@ public class ADProvisioning {
 		long processInstanceKeyL = Long.parseLong(processInstanceKey);
 		tcFormInstanceOperationsIntf formInstanceOperationsIntf = null;
 		formInstanceOperationsIntf = Platform.getService(tcFormInstanceOperationsIntf.class);
-		// long userKeyL = Long.parseLong(strUserkey);
 		HashMap<String, String> procFormHash = new HashMap<String, String>();
 		String response = "FAILURE";
 		String itResourceName = OIMUtility.getITResourceNameFromUserProcesssForm(formInstanceOperationsIntf,
@@ -155,11 +148,6 @@ public class ADProvisioning {
 		String streeAddress = "";
 		String title = "";
 		String telephone = "";
-		// String ext8 = "";
-		// String ext5 = "";
-		// String ext9 = "";
-		// String o = "";
-		// String businessCategory = "";
 		User user = OIMUtility.getUserProfile(strUserkey);
 		log.fine("itResourceName1" + itResourceName);
 		try {
@@ -179,7 +167,6 @@ public class ADProvisioning {
 				procFormHash.put("UD_ADUSER_TITLE", title);
 
 			} else if (itResourceName.toLowerCase().contains("lbg")) {
-				// empNo = populateEmployeeNumber(strUserkey, user);
 				description = populateDescription(strUserkey, user);
 				company = populateCompany(strUserkey, user);
 				phyOfcName = populatphyOfcName(strUserkey, user);
@@ -194,12 +181,10 @@ public class ADProvisioning {
 				procFormHash.put("UD_ADUSER_TITLE", title);
 
 			} else if (itResourceName.toLowerCase().contains("succ")) {
-				// empNo = populateEmployeeNumber(strUserkey, user);
 				description = populateDescription(strUserkey, user);
 				company = populateCompany(strUserkey, user);
 				streeAddress = populateStreetAddress(strUserkey, user);
 				title = populateTitle(strUserkey, user);
-				// procFormHash.put("UD_ADUSER_EMPLOYEENUMBER", empNo);
 				procFormHash.put("UD_ADUSER_DESCRIPTION", description);
 				procFormHash.put("UD_ADUSER_COMPANY", company);
 				procFormHash.put("UD_ADUSER_STREET", streeAddress);
@@ -236,7 +221,7 @@ public class ADProvisioning {
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
 		log.entering(getClass().getName(), "populateBusinessCategory");
 		String businessCategory = null;
-		businessCategory = (String) user.getAttribute("PVP");
+		businessCategory = (String) user.getAttribute("PVPCode");
 		if (isNullOrEmpty(businessCategory)) {
 			businessCategory = "";
 		}
@@ -428,46 +413,45 @@ public class ADProvisioning {
 		String userLogin = null;
 		String PVP = null;
 		String distinguishedName = null;
-
+		String iscontain = "false";
 		userLogin = (String) user.getAttribute(UserManagerConstants.AttributeName.USER_LOGIN.getId());
 		log.fine("userLogin" + userLogin);
 		if (itResourceName.toLowerCase().contains("ad-res")) {
-			String ou_RES = lookupOperationsIntf.getDecodedValueForEncodedValue(CONFIGLOOKUP, "AD_OU_RES");
 			PVP = (String) user.getAttribute("PVPCode");
-			String PVP1 = lookupOperationsIntf.getDecodedValueForEncodedValue("Lookup.BNC.PVP", PVP);
-			String PVPOU = lookupOperationsIntf.getDecodedValueForEncodedValue(CONFIGLOOKUP, "AD_OU_RES_PVP");
-			log.fine("ou_RES" + ou_RES);
 			log.fine("PVP " + PVP);
+			String PVP1 = lookupOperationsIntf.getDecodedValueForEncodedValue("Lookup.BNC.PVP", PVP);
 			log.fine("PVP1 " + PVP1);
-			log.fine("PVPOU " + PVPOU);
 			if (isNullOrEmpty(PVP)) {
-				distinguishedName = "CN=" + userLogin + "," + ou_RES;
-				// "ou=Users,ou= WKS-MIG,OU=W8Only,DC=res,DC=bngf,DC=local";
+				distinguishedName = "CN=" + userLogin + ",ou=Users,ou=WKS-MIG,OU=W8Only,DC=res,DC=bngf,DC=local";
 			} else {
 				log.fine("PVP1 is not null: " + PVP);
-				distinguishedName = "CN=" + userLogin + "," + PVPOU;
-				// ",ou=Users,ou=" + PVP +","+ PVPOU;
-				// "OU=W8Only,DC=res,DC=bngf,DC=local";
+				distinguishedName = "CN=" + userLogin + ",ou=Users,ou=" + "," + PVP1
+						+ "OU=W8Only,DC=res,DC=bngf,DC=local";
 			}
 		} else if (itResourceName.toLowerCase().contains("succ")) {
-			// String ou =
-			// lookupOperationsIntf.getDecodedValueForEncodedValue(CONFIGLOOKUP,
-			// "AD_SUCC");
 
-			// distinguishedName = "CN=" + userLogin + ou;
-			// "ou=Users,ou= WKS-MIG,OU=W8Only,DC=res,DC=bngf,DC=local";
+			String workTransit = (String) user.getAttribute(Constants.UserAttributes.WORK_TRANSIT);
+			String provinceCode = (String) user.getAttribute(Constants.UserAttributes.PROVINCE_CODE);
+			log.fine("provinceCode: " + provinceCode + " workTransit: " + workTransit);
 
-		} /*
-			 * else if (itResourceName.equalsIgnoreCase(
-			 * "AD-LBG Main IT Resource")) {
-			 * 
-			 * String ou =
-			 * lookupOperationsIntf.getDecodedValueForEncodedValue(CONFIGLOOKUP,
-			 * "AD_LBG"); log.fine("ou " + ou); if (isNullOrEmpty(ou)) {
-			 * log.fine("Missing entry for OU "); distinguishedName = ""; } else
-			 * { distinguishedName = "CN=" + userLogin + "," + ou; //
-			 * "ou=Users,ou= LinkedMailboxes,ou=Internal,dc=nbfg, dc=ca"; } }
-			 */
+			String arrProvCode[] = { "QC", "NB", "ON", "SK", "BC", "MB", "NE", "AB", "PE" };
+
+			for (int i = 0; i < arrProvCode.length; i++) {
+				if (provinceCode.toLowerCase().contains(arrProvCode[i].toLowerCase())) {
+					iscontain = "true";
+				}
+			}
+
+			if (isNullOrEmpty(workTransit) || "false".equalsIgnoreCase(iscontain)) {
+
+				String errorMessage = "AD_SUCC_FAILED";
+				throw new RuntimeException(errorMessage);
+			} else {
+				// distinguishedName = "CN=" + userLogin +","+ ou_RES;
+				distinguishedName = "CN=" + userLogin + ",OU=Utillisateurs,OU=" + provinceCode
+						+ "DC=succ,DC=reseau,DC=bnc,DC=ca";
+			}
+		}
 		log.fine("distinguishedName :" + distinguishedName);
 		log.exiting(getClass().getName(), "populateDistinguishedName");
 		return distinguishedName;
@@ -554,6 +538,8 @@ public class ADProvisioning {
 		HashMap<String, String> procFormHash = new HashMap<String, String>();
 
 		formInstanceOperationsIntf = Platform.getService(tcFormInstanceOperationsIntf.class);
+		String itResourceName = OIMUtility.getITResourceNameFromUserProcesssForm(formInstanceOperationsIntf,
+				itResourceinstanceOperationsIntf, processInstanceKeyL);
 		User user = OIMUtility.getUserProfile(userKey);
 		if (adAttribute.equalsIgnoreCase("pvp")) {
 			String businessCategory = populateBusinessCategory(processInstanceKeyL, userKey, user);
@@ -570,6 +556,14 @@ public class ADProvisioning {
 			if (adAttribute.equalsIgnoreCase("firstNameUsed")) {
 				String firstName = populateFirstName(userKey, user);
 				procFormHash.put("UD_ADUSER_FNAME", firstName);
+			}
+		}
+
+		if (adAttribute.equalsIgnoreCase("userPrincipalName")) {
+			String userPrincipalName = "";
+			if (itResourceName.toLowerCase().contains("ad-res")) {
+				userPrincipalName = (String) user.getAttribute(Constants.UserAttributes.RESupn);
+				procFormHash.put("UD_ADUSER_USERPRINCIPALNAME", userPrincipalName);
 			}
 		}
 
