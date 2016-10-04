@@ -4,10 +4,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.thortech.xl.crypto.tcCryptoException;
+
 import Thor.API.Exceptions.tcAPIException;
 import Thor.API.Exceptions.tcColumnNotFoundException;
 import Thor.API.Exceptions.tcFormNotFoundException;
@@ -57,10 +59,10 @@ public class ADProvisioning {
 	 * @throws UserLookupException
 	 * @throws NoSuchUserException
 	 */
-	public String preActionsOnADCreateUser(String processInstanceKey, String strUserkey)
+	public String preActionsOnADCreateUser(String processInstanceKey, String strUserkey, String itResourceName)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
 		log.entering(getClass().getName(), "preActionsOnADCreateUser");
-		log.fine("processInstanceKey" + processInstanceKey + "strUserkey" + strUserkey);
+		log.fine("processInstanceKey =" + processInstanceKey + "strUserkey = " + strUserkey + "itResourceName =" + itResourceName);
 		long processInstanceKeyL = Long.parseLong(processInstanceKey);
 		tcFormInstanceOperationsIntf formInstanceOperationsIntf = null;
 		formInstanceOperationsIntf = Platform.getService(tcFormInstanceOperationsIntf.class);
@@ -76,11 +78,8 @@ public class ADProvisioning {
 		String o = "";
 		String businessCategory = "";
 		String empNo = "";
-
-		String itResourceName = OIMUtility.getITResourceNameFromUserProcesssForm(formInstanceOperationsIntf,
-				itResourceinstanceOperationsIntf, processInstanceKeyL);
 		User user = OIMUtility.getUserProfile(strUserkey);
-		log.fine("itResourceName1" + itResourceName);
+		
 		try {
 			if (itResourceName.toLowerCase().contains("succ")) {
 				sAMAccountName = populatesAMAccountName(processInstanceKeyL, strUserkey, user);
@@ -111,7 +110,8 @@ public class ADProvisioning {
 			}
 			if (itResourceName.toLowerCase().contains("lbg")) {
 				empNo = populateEmployeeNumber(strUserkey, user);
-				procFormHash.put("UD_ADUSER_EMPLOYEENUMBER", empNo + "-l");
+				procFormHash.put("UD_ADLBG_EMPLOYEENUMBER", empNo + "-l");
+				
 			}
 			distinguishName = populateDistinguishedName(processInstanceKeyL, strUserkey, itResourceName, user);
 			log.fine("distinguishName" + distinguishName);
@@ -130,18 +130,15 @@ public class ADProvisioning {
 		return response;
 	}
 
-	public String postActionsOnADCreateUser(String processInstanceKey, String strUserkey)
+	public String postActionsOnADCreateUser(String processInstanceKey, String strUserkey, String itResourceName)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException {
 		log.entering(getClass().getName(), "postActionsOnADCreateUser");
-		log.fine("processInstanceKey" + processInstanceKey + "strUserkey" + strUserkey);
+		log.fine("processInstanceKey =" + processInstanceKey + "strUserkey = " + strUserkey + "itResourceName = " + itResourceName);
 		long processInstanceKeyL = Long.parseLong(processInstanceKey);
 		tcFormInstanceOperationsIntf formInstanceOperationsIntf = null;
 		formInstanceOperationsIntf = Platform.getService(tcFormInstanceOperationsIntf.class);
 		HashMap<String, String> procFormHash = new HashMap<String, String>();
 		String response = "FAILURE";
-		String itResourceName = OIMUtility.getITResourceNameFromUserProcesssForm(formInstanceOperationsIntf,
-				itResourceinstanceOperationsIntf, processInstanceKeyL);
-
 		String description = "";
 		String company = "";
 		String phyOfcName = "";
@@ -173,12 +170,12 @@ public class ADProvisioning {
 				streeAddress = populateStreetAddress(strUserkey, user);
 				title = populateTitle(strUserkey, user);
 				telephone = populateTelephone(strUserkey, user);
-				procFormHash.put("UD_ADUSER_DESCRIPTION", description);
-				procFormHash.put("UD_ADUSER_COMPANY", company);
-				procFormHash.put("UD_ADUSER_OFFICE", phyOfcName);
-				procFormHash.put("UD_ADUSER_STREET", streeAddress);
-				procFormHash.put("UD_ADUSER_TELEPHONE", telephone);
-				procFormHash.put("UD_ADUSER_TITLE", title);
+				procFormHash.put("UD_ADLBG_DESCRIPTION", description);
+				procFormHash.put("UD_ADLBG_COMPANY", company);
+				procFormHash.put("UD_ADLBG_OFFICE", phyOfcName);
+				procFormHash.put("UD_ADLBG_STREET", streeAddress);
+				procFormHash.put("UD_ADLBG_TELEPHONE", telephone);
+				procFormHash.put("UD_ADLBG_TITLE", title);
 
 			} else if (itResourceName.toLowerCase().contains("succ")) {
 				description = populateDescription(strUserkey, user);
@@ -524,12 +521,12 @@ public class ADProvisioning {
 	 * @throws tcProcessNotFoundException
 	 * @throws ParseException
 	 */
-	public String propagateChangesFromUserProfileToAD(String processInstanceKey, String userKey, String adAttribute)
+	public String propagateChangesFromUserProfileToAD(String processInstanceKey, String userKey, String adAttribute, String itResourceName)
 			throws NoSuchUserException, UserLookupException, SearchKeyNotUniqueException, AccessDeniedException,
 			tcAPIException, tcInvalidValueException, tcNotAtomicProcessException, tcFormNotFoundException,
 			tcRequiredDataMissingException, tcProcessNotFoundException, ParseException {
 		log.entering(getClass().getName(), "propagateChangesFromUserProfileToAD");
-		log.fine("processInstanceKey= " + processInstanceKey + " userKey= " + userKey + " adAttribute= " + adAttribute);
+		log.fine("processInstanceKey= " + processInstanceKey + " userKey= " + userKey + " adAttribute= " + adAttribute + "itResourceName = " + itResourceName );
 
 		String response = "FAILURE";
 		tcFormInstanceOperationsIntf formInstanceOperationsIntf = null;
@@ -538,12 +535,11 @@ public class ADProvisioning {
 		HashMap<String, String> procFormHash = new HashMap<String, String>();
 
 		formInstanceOperationsIntf = Platform.getService(tcFormInstanceOperationsIntf.class);
-		String itResourceName = OIMUtility.getITResourceNameFromUserProcesssForm(formInstanceOperationsIntf,
-				itResourceinstanceOperationsIntf, processInstanceKeyL);
+		
 		User user = OIMUtility.getUserProfile(userKey);
 		if (adAttribute.equalsIgnoreCase("pvp")) {
 			String businessCategory = populateBusinessCategory(processInstanceKeyL, userKey, user);
-			procFormHash.put("UD_ADUSER_BUSINESSCATEGORY", businessCategory);
+			procFormHash.put("UD_ADRES_BUSINESSCATEGORY", businessCategory);
 		}
 
 		if (adAttribute.equalsIgnoreCase("lastNameUsed") || adAttribute.equalsIgnoreCase("firstNameUsed")) {
