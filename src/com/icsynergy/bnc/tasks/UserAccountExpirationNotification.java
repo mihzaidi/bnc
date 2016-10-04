@@ -48,8 +48,8 @@ public class UserAccountExpirationNotification extends TaskSupport {
 				String fnUsed = rs.getString("USR_UDF_FIRSTNAMEUSED");
 				String lnUsed = rs.getString("USR_UDF_LASTNAMEUSED");
 				String empNo = rs.getString("USR_EMP_NO");
-				String login = rs.getString("USR_LOGIN");
-
+				String login =rs.getString("USR_LOGIN");
+				
 				long deffDays = getDaysDifference(endDate);
 				log.finest("Days remains to expire : " + (deffDays + 1));
 				log.finest("Users End Date : " + endDate);
@@ -86,9 +86,9 @@ public class UserAccountExpirationNotification extends TaskSupport {
 						notificationData.put("templateRemainingDays", daysToExp);
 
 						log.finest("notificationData: " + notificationData);
-						NotificationEvent event = new NotificationEvent();
+						NotificationEvent event = new NotificationEvent();	
 						event.setTemplateName(templateName);
-						String[] receiverUserIds = { managerLogin };
+						String[] receiverUserIds = { managerLogin, login };
 						event.setUserIds(receiverUserIds);
 						event.setParams(notificationData);
 						log.info(":: Notification Data added to Event :: " + event);
@@ -106,6 +106,10 @@ public class UserAccountExpirationNotification extends TaskSupport {
 		}
 		log.exiting(getClass().getName(), "execute");
 
+	}
+
+	private boolean isNullOrEmpty(String strCheck) {
+		return (strCheck == null) || strCheck.equals("null") || strCheck.trim().length() == 0;
 	}
 
 
