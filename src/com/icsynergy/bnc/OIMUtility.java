@@ -265,7 +265,7 @@ public class OIMUtility {
 
 				// Get the It resource Key from the process form data
 				resultGetProcessFormData.goToRow(0);
-				itResourceKey = resultGetProcessFormData.getLongValue("UD_ADUSER_SERVER");
+				itResourceKey = resultGetProcessFormData.getLongValue("UD_ADLBG_SERVER");
 				log.fine("resultGetProcessFormData length . itResourceKey  =  " + itResourceKey);
 
 				// Get the IT Resource Name from IT resource Key, based on the
