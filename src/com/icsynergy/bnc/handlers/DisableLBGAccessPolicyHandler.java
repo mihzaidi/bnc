@@ -98,25 +98,25 @@ public class DisableLBGAccessPolicyHandler implements PostProcessHandler {
 								+ " is not Provisioned.");
 					}
 				}
-				if (appplInstName.toLowerCase().contains("res") || appplInstName.toLowerCase().contains("succ")) {
-					System.out.println("Account is res Account");
-					if (endDate != null && startDate != null) {
-						if (!startDate.before(new Date()) && !endDate.before(new Date())) {
-							log.info(
-									"startDate [" + startDate + "] endDate [" + endDate + "] so not disabling account");
-						} else {
-							log.info("startDate [" + startDate + "] endDate [" + endDate + "]");
-
-							if (accountStatus.equalsIgnoreCase("Provisioned")) {
-								provService.disable(Long.parseLong(account.getAccountID()));
-
-							} else {
-								log.info("AD LBG account with application Instance Name [" + appplInstName + "]"
-										+ " is not Provisioned.");
-							}
-						}
-					}
-				}
+//				if (appplInstName.toLowerCase().contains("res") || appplInstName.toLowerCase().contains("succ")) {
+//					System.out.println("Account is res Account");
+//					if (endDate != null && startDate != null) {
+//						if (!startDate.before(new Date()) && !endDate.before(new Date())) {
+//							log.info(
+//									"startDate [" + startDate + "] endDate [" + endDate + "] so not disabling account");
+//						} else {
+//							log.info("startDate [" + startDate + "] endDate [" + endDate + "]");
+//
+//							if (accountStatus.equalsIgnoreCase("Provisioned")) {
+//								provService.disable(Long.parseLong(account.getAccountID()));
+//
+//							} else {
+//								log.info("AD LBG account with application Instance Name [" + appplInstName + "]"
+//										+ " is not Provisioned.");
+//							}
+//						}
+//					}
+//				}
 			}
 		} catch (UserNotFoundException e) {
 			log.log(Level.SEVERE, "Exception", e.toString());
