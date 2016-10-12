@@ -27,6 +27,7 @@ public class Constants {
 		public static final String Function_EN = "bngfFunctionEN";
 		public static final String Function_FR = "bngFunctionFR";
 		public static final String Office_Phone_Direct = "bngOfficePhoneDirect";
+		public static final String RESUser_Principal_Name = "RESUserPrincipalName";
 	}
 
 	public class CoucheAttributes {
