@@ -138,7 +138,9 @@ public class SetTransitAttributeHandler implements PostProcessHandler {
 	}
 
 	private String isWorkingTransitChanged(Identity newUserState, Identity oldUserState) {
+		log.entering(getClass().getName(), "isWorkingTransitChanged");
 		String oldWorkTransit = null, workTransit = null, language = null;
+		String response = "";
 
 		if (oldUserState != null) {
 			oldWorkTransit = (String) oldUserState.getAttribute(Constants.UserAttributes.WORK_TRANSIT);
@@ -150,14 +152,19 @@ public class SetTransitAttributeHandler implements PostProcessHandler {
 			log.fine("Current Work Transit: " + workTransit);
 			language = (String) newUserState.getAttribute(Constants.UserAttributes.PREF_LANG);
 			log.fine("Language: " + language);
+
 		}
 		if ((!oldWorkTransit.equals(workTransit)) && (!isNullOrEmpty(workTransit))) {
 			log.fine("workTransit language" + workTransit + "~" + language);
-			return workTransit + "~" + language;
+
+			response = workTransit + "~" + language;
 		} else {
 			log.fine("Work Transit is same, no action is required");
-			return "";
+
+			response = "";
 		}
+		log.exiting(getClass().getName(), "isWorkingTransitChanged");
+		return response;
 	}
 
 	private void processUser(String strUserKey, Connection transitConnection, String workTransit, String language,
@@ -249,7 +256,7 @@ public class SetTransitAttributeHandler implements PostProcessHandler {
 
 			}
 		}
-
+		log.exiting(getClass().getName(), "processUser");
 	}
 
 	/**

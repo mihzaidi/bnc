@@ -41,15 +41,17 @@ public class DisableLBGAccountHandler implements PostProcessHandler {
 	public EventResult execute(long arg0, long arg1, Orchestration orchestration) {
 		log.entering(getClass().getName(), "execute");
 		HashMap<String, Serializable> modParams = orchestration.getParameters();
-    	String usrKeyStr = (String) modParams.get("BeneficiaryKey");
+		String usrKeyStr = (String) modParams.get("BeneficiaryKey");
 
 		log.info("usrKeyStr [" + usrKeyStr + "]");
-		log.info("orchestration.getTarget().getEntityId() : execute"+ orchestration.getTarget().getEntityId());
+		log.info("orchestration.getTarget().getEntityId() : execute" + orchestration.getTarget().getEntityId());
 		disableADAccount(usrKeyStr);
+		log.exiting(getClass().getName(), "execute");
 		return new EventResult();
 	}
 
 	private void disableADAccount(String userKeyStr) {
+		log.entering(getClass().getName(), "disableADAccount");
 		ProvisioningService provService = Platform.getService(ProvisioningService.class);
 		List<Account> listAccount;
 		tcFormInstanceOperationsIntf formOperations = Platform.getService(tcFormInstanceOperationsIntf.class);
@@ -95,25 +97,30 @@ public class DisableLBGAccountHandler implements PostProcessHandler {
 								+ " is not Provisioned.");
 					}
 				}
-//				if (appplInstName.toLowerCase().contains("res") || appplInstName.toLowerCase().contains("succ")) {
-//					System.out.println("Account is res Account");
-//					if (endDate != null && startDate != null) {
-//						if (!startDate.before(new Date()) && !endDate.before(new Date())) {
-//							log.info(
-//									"startDate [" + startDate + "] endDate [" + endDate + "] so not disabling account");
-//						} else {
-//							log.info("startDate [" + startDate + "] endDate [" + endDate + "]");
-//
-//							if (accountStatus.equalsIgnoreCase("Provisioned")) {
-//								provService.disable(Long.parseLong(account.getAccountID()));
-//
-//							} else {
-//								log.info("AD LBG account with application Instance Name [" + appplInstName + "]"
-//										+ " is not Provisioned.");
-//							}
-//						}
-//					}
-//				}
+				// if (appplInstName.toLowerCase().contains("res") ||
+				// appplInstName.toLowerCase().contains("succ")) {
+				// System.out.println("Account is res Account");
+				// if (endDate != null && startDate != null) {
+				// if (!startDate.before(new Date()) && !endDate.before(new
+				// Date())) {
+				// log.info(
+				// "startDate [" + startDate + "] endDate [" + endDate + "] so
+				// not disabling account");
+				// } else {
+				// log.info("startDate [" + startDate + "] endDate [" + endDate
+				// + "]");
+				//
+				// if (accountStatus.equalsIgnoreCase("Provisioned")) {
+				// provService.disable(Long.parseLong(account.getAccountID()));
+				//
+				// } else {
+				// log.info("AD LBG account with application Instance Name [" +
+				// appplInstName + "]"
+				// + " is not Provisioned.");
+				// }
+				// }
+				// }
+				// }
 			}
 		} catch (UserNotFoundException e) {
 			log.log(Level.SEVERE, "Exception", e.toString());
@@ -136,7 +143,7 @@ public class DisableLBGAccountHandler implements PostProcessHandler {
 		} catch (Exception e) {
 			log.log(Level.SEVERE, "Exception", e.toString());
 		}
-
+		log.exiting(getClass().getName(), "disableADAccount");
 	}
 
 	@Override
@@ -152,7 +159,7 @@ public class DisableLBGAccountHandler implements PostProcessHandler {
 			String usrKeyStr = (String) modParams.get("BeneficiaryKey");
 			log.info("usrKeyStr [" + usrKeyStr + "]");
 			disableADAccount(usrKeyStr);
-			log.info("orchestration.getTarget().getEntityId() : BulkEventResult"+ entityIds[i]);
+			log.info("orchestration.getTarget().getEntityId() : BulkEventResult" + entityIds[i]);
 
 		}
 
