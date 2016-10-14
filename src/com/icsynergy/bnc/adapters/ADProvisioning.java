@@ -160,21 +160,23 @@ public class ADProvisioning {
 		return distinguishedName;
 	}
 
-	public String prepopulateDistinguishedNameRES(String userlogin, String PVP) throws tcAPIException {
-		log.entering(super.getClass().getName(), "prepopulateDistinguishedNameRES");
-		log.fine("ADProvisoning/prepopulateDistinguishedNameRES userlogin=" + userlogin + ", PVP=" + PVP);
-		String distinguishedName = "";
+	public String prepopulateRESOU(String PVP) throws tcAPIException {
+		log.entering(super.getClass().getName(), "prepopulateRESOU");
+		log.fine("ADProvisoning/prepopulateRESOU PVP=" + PVP);
+		String resOU = "";
 		if (isNullOrEmpty(PVP)) {
-			distinguishedName = "CN=" + userlogin + ",ou=Users,ou=WKS-MIG,OU=W8Only,DC=res,DC=bngf,DC=local";
+			//resOU = "ou=Users,ou=WKS-MIG,OU=W8Only,DC=res,DC=bngf,DC=local";
+			resOU = "OU=users,OU=WKS-MIG,DC=RES,DC=local";
 		} else {
 			log.fine("PVP1 is not null: " + PVP);
 			String PVPDecode = this.lookupOperationsIntf.getDecodedValueForEncodedValue("Lookup.BNC.PVP", PVP);
 			log.fine("PVPDecode = " + PVPDecode);
-			distinguishedName = "CN=" + userlogin + ",ou=Users,ou="+ PVPDecode +",OU=W8Only,DC=res,DC=bngf,DC=local";
+			//resOU = "ou=Users,ou="+ PVPDecode +",OU=W8Only,DC=res,DC=bngf,DC=local";
+			resOU = "OU=users,OU=" + PVPDecode + ",DC=RES,DC=local";
 		}
-		log.fine("distinguishedName :" + distinguishedName);
-		log.exiting(super.getClass().getName(), "prepopulateDistinguishedNameRES");
-		return distinguishedName;
+		log.fine("resOU :" + resOU);
+		log.exiting(super.getClass().getName(), "prepopulateRESOU");
+		return resOU;
 	}
 
 	public String propagateChangesFromUserProfileToAD(String processInstanceKey, String userKey, String adAttribute,
