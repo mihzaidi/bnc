@@ -136,11 +136,11 @@ public class ADProvisioning {
 		return description;
 	}
 
-	public String prepopulateDistinguishedNameSUCC(String userLogin, String workTransit, String provinceCode) {
-		log.entering(super.getClass().getName(), "prepopulateDistinguishedNameSUCC");
-		log.fine("ADProvisoning/prepopulateDistinguishedNameSUCC userLogin=" + userLogin + ", workTransit="
+	public String prepopulateSUCCOU(String workTransit, String provinceCode) {
+		log.entering(super.getClass().getName(), "prepopulateSUCCOU");
+		log.fine("ADProvisoning/prepopulateSUCCOU workTransit="
 				+ workTransit + "provinceCode " + provinceCode);
-		String distinguishedName = null;
+		String succOU = null;
 		String iscontain = "false";
 		String[] arrProvCode = { "QC", "NB", "ON", "SK", "BC", "MB", "NE", "AB", "PE" };
 		for (int i = 0; i < arrProvCode.length; ++i) {
@@ -152,12 +152,11 @@ public class ADProvisioning {
 			String errorMessage = "AD_SUCC_FAILED";
 			throw new RuntimeException(errorMessage);
 		}
-		distinguishedName = "CN=" + userLogin + ",OU=Utillisateurs,OU=" + provinceCode
-				+ "DC=succ,DC=reseau,DC=bnc,DC=ca";
+		succOU = "OU=Utillisateurs,OU=" + provinceCode + "DC=succ,DC=reseau,DC=bnc,DC=ca";
 
-		log.fine("distinguishedName :" + distinguishedName);
-		log.exiting(super.getClass().getName(), "prepopulateDistinguishedNameSUCC");
-		return distinguishedName;
+		log.fine("succOU :" + succOU);
+		log.exiting(super.getClass().getName(), "prepopulateSUCCOU");
+		return succOU;
 	}
 
 	public String prepopulateRESOU(String PVP) throws tcAPIException {
@@ -220,7 +219,7 @@ public class ADProvisioning {
 					procFormHash.put("UD_ADLBG_DEPARTMENT", dept);
 				}
 			}
-			if ((adAttribute.equalsIgnoreCase("CountryCode")) || (adAttribute.equalsIgnoreCase("FirtsNameUsed"))
+			if ((adAttribute.equalsIgnoreCase("CountryCode")) || (adAttribute.equalsIgnoreCase("firstNameUsed"))
 					|| (adAttribute.equalsIgnoreCase("lastNameUsed")) || (adAttribute.equalsIgnoreCase("status"))
 					|| (adAttribute.equalsIgnoreCase("StartDate")) || (adAttribute.equalsIgnoreCase("EndDate"))) {
 				String fnUsed = (String) user.getAttribute(Constants.UserAttributes.FirstNameUsed);
@@ -271,7 +270,7 @@ public class ADProvisioning {
 					procFormHash.put("UD_ADRES_FNAME", firstName);
 				}
 			}
-			if ((adAttribute.equalsIgnoreCase("CountryCode")) || (adAttribute.equalsIgnoreCase("FirtsNameUsed"))
+			if ((adAttribute.equalsIgnoreCase("CountryCode")) || (adAttribute.equalsIgnoreCase("firstNameUsed"))
 					|| (adAttribute.equalsIgnoreCase("lastNameUsed")) || (adAttribute.equalsIgnoreCase("status"))
 					|| (adAttribute.equalsIgnoreCase("StartDate")) || (adAttribute.equalsIgnoreCase("EndDate"))) {
 				String fnUsed = (String) user.getAttribute(Constants.UserAttributes.FirstNameUsed);
