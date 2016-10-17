@@ -164,14 +164,14 @@ public class ADProvisioning {
 		log.fine("ADProvisoning/prepopulateRESOU PVP=" + PVP);
 		String resOU = "";
 		if (isNullOrEmpty(PVP)) {
-			//resOU = "ou=Users,ou=WKS-MIG,OU=W8Only,DC=res,DC=bngf,DC=local";
-			resOU = "OU=users,OU=WKS-MIG,DC=RES,DC=local";
+			resOU = "ou=Users,ou=WKS-MIG,OU=W8Only,DC=res,DC=bngf,DC=local";
+			//resOU = "OU=users,OU=WKS-MIG,DC=RES,DC=local";
 		} else {
 			log.fine("PVP1 is not null: " + PVP);
 			String PVPDecode = this.lookupOperationsIntf.getDecodedValueForEncodedValue("Lookup.BNC.PVP", PVP);
 			log.fine("PVPDecode = " + PVPDecode);
-			//resOU = "ou=Users,ou="+ PVPDecode +",OU=W8Only,DC=res,DC=bngf,DC=local";
-			resOU = "OU=users,OU=" + PVPDecode + ",DC=RES,DC=local";
+			resOU = "ou=Users,ou="+ PVPDecode +",OU=W8Only,DC=res,DC=bngf,DC=local";
+			//resOU = "OU=users,OU=" + PVPDecode + ",DC=RES,DC=local";
 		}
 		log.fine("resOU :" + resOU);
 		log.exiting(super.getClass().getName(), "prepopulateRESOU");
