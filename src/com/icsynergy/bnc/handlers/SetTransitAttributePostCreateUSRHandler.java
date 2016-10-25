@@ -1,5 +1,6 @@
 package com.icsynergy.bnc.handlers;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,15 +11,12 @@ import java.util.logging.Logger;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 import com.icsynergy.bnc.Constants;
 
-import Thor.API.Exceptions.tcAPIException;
 import Thor.API.Operations.tcLookupOperationsIntf;
 import oracle.iam.identity.usermgmt.api.UserManagerConstants;
-import oracle.iam.identity.vo.Identity;
 import oracle.iam.platform.Platform;
 import oracle.iam.platform.entitymgr.EntityManager;
 import oracle.iam.platform.kernel.EventFailedException;
@@ -29,7 +27,7 @@ import oracle.iam.platform.kernel.vo.BulkOrchestration;
 import oracle.iam.platform.kernel.vo.EventResult;
 import oracle.iam.platform.kernel.vo.Orchestration;
 
-public class SetTransitAttributeHandler implements PostProcessHandler {
+public class SetTransitAttributePostCreateUSRHandler implements PostProcessHandler {
 
 	private final Logger log = Logger.getLogger("com.icsynergy");
 	private static final String TRAN_ISSUCC = "TRAN_ISSUCC";
@@ -51,41 +49,25 @@ public class SetTransitAttributeHandler implements PostProcessHandler {
 	private static final String TRAN_SITE_NAME_EN = "TRAN_SITE_NAME_EN";
 	private static final String TRAN_CITY_EN = "TRAN_CITY_EN";
 	private static final String TRAN_COUNTRY_EN = "TRAN_COUNTRY_EN";
-	final EntityManager entMgr = Platform.getService(EntityManager.class);
+	private final EntityManager entMgr = Platform.getService(EntityManager.class);
 
 	@Override
 	public EventResult execute(long arg0, long arg1, Orchestration orchestration) {
 		log.entering(getClass().getName(), "execute");
-		Connection transitConnection = null;
-		String targetType = null;
-		String targetID = null;
-		String ContextVal = null;
-		String operation = null;
+		String strUserKey = orchestration.getTarget().getEntityId();
+		String workTransit = String.valueOf(orchestration.getParameters().get(Constants.UserAttributes.WORK_TRANSIT));
+		String language = String.valueOf(orchestration.getParameters().get(Constants.UserAttributes.PREF_LANG));
+		log.finest("strUserKey  " + strUserKey + "workTransit = " + workTransit + "language = " + language);
 		try {
-			Identity newUserState = (Identity) getNewUserStates(orchestration);
-			Identity oldUserState = (Identity) getOldUserStates(orchestration);
-
-			String workTransitAndLanguage = isWorkingTransitChanged(newUserState, oldUserState);
-			if (!isNullOrEmpty(workTransitAndLanguage)) {
-				String workTransit[] = workTransitAndLanguage.split("~");
-				log.fine("Work Transit : 0 " + workTransit[0] + "Work Transit 1: " + workTransit[1]);
-				transitConnection = getDatabaseConnection();
-				targetType = orchestration.getTarget().getType();
-				targetID = newUserState.getEntityId();
-				processUser(orchestration.getTarget().getEntityId(), transitConnection, workTransit[0].trim(),
-						workTransit[1].trim(), targetType, targetID);
+			if ((!isNullOrEmpty(language)) && (!isNullOrEmpty(workTransit))) {
+				Connection transitConnection = getDatabaseConnection();
+				processUser(strUserKey, transitConnection, workTransit, language);
+			} else {
+				log.fine("Work Transit and language is null");
 			}
 		} catch (Exception e) {
-			throw new EventFailedException("Exception in processing", null, e);
-		} finally {
-			if (transitConnection != null) {
-				try {
-					transitConnection.close();
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					log.log(Level.SEVERE, "Exception while closing connection", e);
-				}
-			}
+			log.log(Level.SEVERE, e.getMessage(), e);
+			throw new EventFailedException("Error processing user", e);
 		}
 
 		log.exiting(getClass().getName(), "execute");
@@ -95,104 +77,51 @@ public class SetTransitAttributeHandler implements PostProcessHandler {
 	@Override
 	public BulkEventResult execute(long arg0, long arg1, BulkOrchestration bulkOrchestration) {
 		log.entering(getClass().getName(), "bulk execute");
-		Connection transitConnection = null;
 
+		String[] arstrUserKeys = bulkOrchestration.getTarget().getAllEntityId();
+		HashMap<String, Serializable>[] arParams = bulkOrchestration.getBulkParameters();
+
+		log.finest("getting DB connection");
+		Connection transitConnection;
 		try {
-
-			String[] entityIds = bulkOrchestration.getTarget().getAllEntityId();
-			Identity[] oldUserStatesIdntArr = (Identity[]) getOldUserStates(bulkOrchestration);
-			Identity[] newUserStatesIdntArr = (Identity[]) getNewUserStates(bulkOrchestration);
 			transitConnection = getDatabaseConnection();
-			for (int i = 0; i < entityIds.length; i++) {
-				String targetType = null;
-				String targetID = null;
-				Identity newUserState = newUserStatesIdntArr != null ? newUserStatesIdntArr[i] : null;
-				Identity oldUserState = oldUserStatesIdntArr != null ? oldUserStatesIdntArr[i] : null;
-
-				targetType = bulkOrchestration.getTarget().getType();
-				targetID = newUserState.getEntityId();
-				String workTransitAndLanguage = isWorkingTransitChanged(newUserState, oldUserState);
-
-				if (!isNullOrEmpty(workTransitAndLanguage)) {
-					String workTransit[] = workTransitAndLanguage.split("~");
-					if (!isNullOrEmpty(workTransit[1])) {
-						processUser(entityIds[i], transitConnection, workTransit[0].trim(), workTransit[1].trim(),
-								targetType, targetID);
-					} else {
-						log.fine("Preffered language is null or empty.");
-					}
-				}
-			}
 		} catch (Exception e) {
-			throw new EventFailedException("Exception in bulk processing", null, e);
-		} finally {
-			if (transitConnection != null) {
-				try {
-					transitConnection.close();
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					log.log(Level.SEVERE, "Exception while closing connection", e);
-				}
+			throw new EventFailedException("Can't get DB connection", e);
+		}
+
+		log.finest(String.format("bulk processing %d users...", arstrUserKeys.length));
+		for (int i = 0; i < arstrUserKeys.length; i++) {
+			try {
+				processUser(arstrUserKeys[i], transitConnection,
+						String.valueOf(arParams[i].get(Constants.UserAttributes.WORK_TRANSIT)),
+						String.valueOf(arParams[i].get(Constants.UserAttributes.PREF_LANG)));
+			} catch (Exception e) {
+				log.log(Level.SEVERE, e.getMessage(), e);
+				throw new EventFailedException("Exception while processing user with key=" + arstrUserKeys[i], e);
 			}
 		}
+
 		log.exiting(getClass().getName(), "bulk execute");
 		return new BulkEventResult();
 	}
 
-	private String isWorkingTransitChanged(Identity newUserState, Identity oldUserState) {
-		log.entering(getClass().getName(), "isWorkingTransitChanged");
-		String oldWorkTransit = null, workTransit = null, language = null;
-		String response = "";
-
-		if (oldUserState != null) {
-			oldWorkTransit = (String) oldUserState.getAttribute(Constants.UserAttributes.WORK_TRANSIT);
-			log.fine("Old Work Transit: " + oldWorkTransit);
-		}
-
-		if (newUserState != null) {
-			workTransit = (String) newUserState.getAttribute(Constants.UserAttributes.WORK_TRANSIT);
-			log.fine("Current Work Transit: " + workTransit);
-			language = (String) newUserState.getAttribute(Constants.UserAttributes.PREF_LANG);
-			log.fine("Language: " + language);
-		}
-
-		if ((!isNullOrEmpty(language)) && (!isNullOrEmpty(workTransit))) {
-			if ((!oldWorkTransit.equals(workTransit)) || oldWorkTransit == null) {
-				log.fine("workTransit language" + workTransit + "~" + language);
-				response = workTransit + "~" + language;
-				log.fine("response : " + response);
-			} else {
-				log.fine("Work Transit is same, no action is required");
-				response = "";
-			}
-		} else {
-			log.fine("Work Transit and language is null");
-			response = "";
-		}
-		log.exiting(getClass().getName(), "isWorkingTransitChanged");
-		return response;
-	}
-
-	private void processUser(String strUserKey, Connection transitConnection, String workTransit, String language,
-			String targetType, String targetID) throws tcAPIException, SQLException, Exception {
+	private void processUser(String strUserKey, Connection transitConnection, String workTransit, String language)
+			throws Exception {
 		log.entering(getClass().getName(), "processUser");
 		PreparedStatement stmt = null;
-
+		log.finest("strUserKey  " + strUserKey + "workTransit = " + workTransit + "language = " + language);
 		final String SQL = "select " + TRAN_ISSUCC + "," + TRAN_STREET_NUMBER + "," + TRAN_POSTALCODE + ","
 				+ TRAN_PROVINCE_CODE + "," + TRAN_COUNTRY_CODE + "," + TRAN_FR_DESCRIPTION + ","
 				+ TRAN_TYPE_FR_DESCRIPTION + "," + TRAN_STREET_NAME_FR + "," + TRAN_PROVINCE_EN + "," + TRAN_PROVINCE_FR
 				+ "," + TRAN_SITE_NAME_FR + "," + TRAN_CITY_FR + "," + TRAN_COUNTRY_FR + "," + TRAN_EN_DESCRIPTION + ","
 				+ TRAN_TYPE_EN_DESCRIPTION + "," + TRAN_STREET_NAME_EN + "," + TRAN_SITE_NAME_EN + "," + TRAN_CITY_EN
 				+ "," + TRAN_COUNTRY_EN + " from tb_tran_transit where TRAN_CODE = ?";
-
 		log.finest("SQL..." + SQL);
-
 		try {
 			stmt = transitConnection.prepareStatement(SQL);
 			stmt.setString(1, workTransit);
 			ResultSet rs = stmt.executeQuery();
 			log.finest("rs..." + rs);
-
 			while (rs.next()) {
 				/*
 				 * log.finest("rs.getString(TRAN_ISSUCC) .." +
@@ -214,7 +143,7 @@ public class SetTransitAttributeHandler implements PostProcessHandler {
 				 * "iterating through result set...");
 				 */
 
-				HashMap<String, Object> hm = new HashMap<String, Object>();
+				HashMap<String, Object> hm = new HashMap<>();
 				log.finest("bulk modifying users");
 				hm.put(Constants.UserAttributes.SUCCURSALE, rs.getString(TRAN_ISSUCC));
 				hm.put(Constants.UserAttributes.OFFICE_STREET_NUMBER, rs.getString(TRAN_STREET_NUMBER));
@@ -222,7 +151,7 @@ public class SetTransitAttributeHandler implements PostProcessHandler {
 				hm.put(Constants.UserAttributes.PROVINCE_CODE, rs.getString(TRAN_PROVINCE_CODE));
 				hm.put(Constants.UserAttributes.COUNTRY_CODE, rs.getString(TRAN_COUNTRY_CODE));
 
-				if (language.toLowerCase().equals("fr")) {
+				if (language.equalsIgnoreCase("fr")) {
 					log.finest("Preffered Language is fr");
 					hm.put(Constants.UserAttributes.TRANSIT_DESCRIPTION, rs.getString(TRAN_FR_DESCRIPTION));
 					hm.put(Constants.UserAttributes.TRANSIT_TYPE_DESCRIPTION, rs.getString(TRAN_TYPE_FR_DESCRIPTION));
@@ -240,18 +169,17 @@ public class SetTransitAttributeHandler implements PostProcessHandler {
 					hm.put(Constants.UserAttributes.PROVINCE, rs.getString(TRAN_PROVINCE_EN));
 					hm.put(UserManagerConstants.AttributeName.USER_COUNTRY.getId(), rs.getString(TRAN_COUNTRY_EN));
 				}
+
+				log.finer("strUserKey " + strUserKey);
+				log.finer("hm " + hm);
 				try {
-					log.fine("targetType " + targetType);
-					log.fine("targetID " + targetID);
-					log.fine("hm " + hm);
-					entMgr.modifyEntity(targetType, targetID, hm);
+					entMgr.modifyEntity("User", strUserKey, hm);
 					log.fine("User modified");
 				} catch (Exception e) {
 					log.log(Level.SEVERE, "Exception modifying user", e);
 					throw new EventFailedException("Exception modifying user", e);
 				}
 			}
-
 		} finally {
 			if (stmt != null) {
 				try {
@@ -259,7 +187,6 @@ public class SetTransitAttributeHandler implements PostProcessHandler {
 				} catch (SQLException e) {
 					log.log(Level.SEVERE, "Exception while closing preparedStatement", e);
 				}
-
 			}
 		}
 		log.exiting(getClass().getName(), "processUser");
@@ -269,14 +196,8 @@ public class SetTransitAttributeHandler implements PostProcessHandler {
 	 * Method to obtain a database connection to Transit DB
 	 * 
 	 * @return Connection object
-	 * @throws tcAPIException
-	 *             in case of exceptions
-	 * @throws NamingException
-	 *             in case of exceptions
-	 * @throws SQLException
-	 *             in case of exceptions
 	 */
-	private Connection getDatabaseConnection() throws tcAPIException, NamingException, SQLException {
+	private Connection getDatabaseConnection() throws Exception {
 		log.entering(getClass().getName(), "getDatabaseConnection");
 
 		final String CONFIGLOOKUP = "Lookup.BNC.Transit";
@@ -300,7 +221,7 @@ public class SetTransitAttributeHandler implements PostProcessHandler {
 				con = datasource.getConnection();
 				log.fine("Successfully got a database connection to Server");
 			} else {
-				log.fine("Failed to lookup datasource.");
+				log.log(Level.SEVERE, "Failed to lookup datasource");
 				throw new RuntimeException("Can't get database connection");
 			}
 		} finally {
@@ -313,43 +234,6 @@ public class SetTransitAttributeHandler implements PostProcessHandler {
 
 	private boolean isNullOrEmpty(String strCheck) {
 		return (strCheck == null) || strCheck.equals("null") || strCheck.trim().length() == 0;
-	}
-
-	/**
-	 * Gets new user state
-	 *
-	 * @param orchestration
-	 * @return
-	 */
-	private Object getNewUserStates(AbstractGenericOrchestration orchestration) {
-		log.entering(getClass().getName(), "getNewUserStates");
-
-		Object newUserStates = null;
-		HashMap interEventData = orchestration.getInterEventData();
-
-		if (interEventData != null)
-			newUserStates = interEventData.get("NEW_USER_STATE");
-
-		log.exiting(getClass().getName(), "getNewUserStates");
-		return newUserStates;
-	}
-
-	/**
-	 * Gets Old User state
-	 *
-	 * @param orchestration
-	 * @return
-	 */
-	private Object getOldUserStates(AbstractGenericOrchestration orchestration) {
-		log.entering(getClass().getName(), "getOldUserStates");
-		Object oldUserStates = null;
-
-		HashMap interEventData = orchestration.getInterEventData();
-		if (interEventData != null)
-			oldUserStates = interEventData.get("CURRENT_USER");
-
-		log.exiting(getClass().getName(), "getOldUserStates");
-		return oldUserStates;
 	}
 
 	@Override
